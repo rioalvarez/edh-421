@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Exports\DeviceExporter;
+use App\Filament\Imports\DeviceImporter;
 use App\Filament\Resources\DeviceResource\Pages;
 use App\Filament\Resources\DeviceResource\RelationManagers;
 use App\Models\Device;
@@ -14,6 +16,8 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\ExportAction;
+use Filament\Tables\Actions\ImportAction;
 use Filament\Tables\Table;
 
 class DeviceResource extends Resource implements HasShieldPermissions
@@ -353,6 +357,16 @@ class DeviceResource extends Resource implements HasShieldPermissions
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+            ])
+            ->headerActions([
+                ExportAction::make()
+                    ->exporter(DeviceExporter::class)
+                    ->label('Export')
+                    ->icon('heroicon-o-arrow-down-tray'),
+                ImportAction::make()
+                    ->importer(DeviceImporter::class)
+                    ->label('Import')
+                    ->icon('heroicon-o-arrow-up-tray'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
