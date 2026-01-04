@@ -11,6 +11,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 use Jeffgreco13\FilamentBreezy\Traits\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
@@ -69,5 +70,10 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
     public function canAccessPanel(Panel $panel): bool
     {
         return true;
+    }
+
+    public function device(): HasOne
+    {
+        return $this->hasOne(Device::class);
     }
 }
