@@ -2,14 +2,14 @@
 
 namespace App\Filament\Exports;
 
-use App\Models\Book;
+use App\Models\Article;
 use Filament\Actions\Exports\ExportColumn;
 use Filament\Actions\Exports\Exporter;
 use Filament\Actions\Exports\Models\Export;
 
-class BookExporter extends Exporter
+class ArticleExporter extends Exporter
 {
-    protected static ?string $model = Book::class;
+    protected static ?string $model = Article::class;
 
     public static function getColumns(): array
     {
@@ -17,8 +17,14 @@ class BookExporter extends Exporter
             ExportColumn::make('id')
                 ->label('ID'),
             ExportColumn::make('title'),
-            ExportColumn::make('author'),
-            ExportColumn::make('description'),
+            ExportColumn::make('slug'),
+            ExportColumn::make('author_name')
+                ->label('Author'),
+            ExportColumn::make('category'),
+            ExportColumn::make('status'),
+            ExportColumn::make('content'),
+            ExportColumn::make('views'),
+            ExportColumn::make('published_at'),
             ExportColumn::make('created_at'),
             ExportColumn::make('updated_at'),
         ];
@@ -26,7 +32,7 @@ class BookExporter extends Exporter
 
     public static function getCompletedNotificationBody(Export $export): string
     {
-        $body = 'Your book export has completed and ' . number_format($export->successful_rows) . ' ' . str('row')->plural($export->successful_rows) . ' exported.';
+        $body = 'Your article export has completed and ' . number_format($export->successful_rows) . ' ' . str('row')->plural($export->successful_rows) . ' exported.';
 
         if ($failedRowsCount = $export->getFailedRowsCount()) {
             $body .= ' ' . number_format($failedRowsCount) . ' ' . str('row')->plural($failedRowsCount) . ' failed to export.';

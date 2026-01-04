@@ -3,10 +3,10 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Book;
+use App\Models\Article;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class BookPolicy
+class ArticlePolicy
 {
     use HandlesAuthorization;
 
@@ -15,15 +15,15 @@ class BookPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_book');
+        return $user->can('view_any_article');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Book $book): bool
+    public function view(User $user, Article $article): bool
     {
-        return $user->can('view_book');
+        return $user->can('view_article');
     }
 
     /**
@@ -31,23 +31,23 @@ class BookPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_book');
+        return $user->can('create_article');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Book $book): bool
+    public function update(User $user, Article $article): bool
     {
-        return $user->can('update_book');
+        return $user->can('update_article');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Book $book): bool
+    public function delete(User $user, Article $article): bool
     {
-        return $user->can('delete_book');
+        return $user->can('delete_article');
     }
 
     /**
@@ -55,15 +55,15 @@ class BookPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_book');
+        return $user->can('delete_any_article');
     }
 
     /**
      * Determine whether the user can permanently delete.
      */
-    public function forceDelete(User $user, Book $book): bool
+    public function forceDelete(User $user, Article $article): bool
     {
-        return $user->can('force_delete_book');
+        return $user->can('force_delete_article');
     }
 
     /**
@@ -71,15 +71,15 @@ class BookPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_book');
+        return $user->can('force_delete_any_article');
     }
 
     /**
      * Determine whether the user can restore.
      */
-    public function restore(User $user, Book $book): bool
+    public function restore(User $user, Article $article): bool
     {
-        return $user->can('restore_book');
+        return $user->can('restore_article');
     }
 
     /**
@@ -87,15 +87,15 @@ class BookPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_book');
+        return $user->can('restore_any_article');
     }
 
     /**
      * Determine whether the user can replicate.
      */
-    public function replicate(User $user, Book $book): bool
+    public function replicate(User $user, Article $article): bool
     {
-        return $user->can('replicate_book');
+        return $user->can('replicate_article');
     }
 
     /**
@@ -103,6 +103,6 @@ class BookPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_book');
+        return $user->can('reorder_article');
     }
 }
