@@ -34,6 +34,18 @@ class TicketResource extends Resource implements HasShieldPermissions
 
     protected static ?string $pluralModelLabel = 'Tickets';
 
+    // Scope: User biasa hanya lihat tiket sendiri, admin lihat semua
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        if (!auth()->user()->hasRole('super_admin')) {
+            $query->where('user_id', auth()->id());
+        }
+
+        return $query;
+    }
+
     public static function getPermissionPrefixes(): array
     {
         return [
@@ -50,12 +62,25 @@ class TicketResource extends Resource implements HasShieldPermissions
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::whereIn('status', ['open', 'in_progress'])->count() ?: null;
+        $query = static::getModel()::whereIn('status', ['open', 'in_progress']);
+
+        // User biasa hanya hitung tiket sendiri
+        if (!auth()->user()->hasRole('super_admin')) {
+            $query->where('user_id', auth()->id());
+        }
+
+        return $query->count() ?: null;
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        $count = static::getModel()::where('status', 'open')->count();
+        $query = static::getModel()::where('status', 'open');
+
+        if (!auth()->user()->hasRole('super_admin')) {
+            $query->where('user_id', auth()->id());
+        }
+
+        $count = $query->count();
         return $count > 5 ? 'danger' : ($count > 0 ? 'warning' : 'success');
     }
 
@@ -99,7 +124,8 @@ class TicketResource extends Resource implements HasShieldPermissions
                             ->preload()
                             ->nullable()
                             ->reactive()
-                            ->helperText('Pilih perangkat yang bermasalah (opsional)'),
+                            ->helperText('Pilih perangkat yang bermasalah (opsional)')
+                            ->disabled(fn ($record) => $record !== null && !auth()->user()->hasRole('super_admin')),
 
                         Forms\Components\Select::make('category')
                             ->label('Kategori')
@@ -111,16 +137,23 @@ class TicketResource extends Resource implements HasShieldPermissions
                                 'other' => 'Lainnya',
                             ])
                             ->required()
-                            ->default('hardware'),
+                            ->default('hardware')
+                            ->disabled(fn ($record) => $record !== null && !auth()->user()->hasRole('super_admin')),
 
                         Forms\Components\Select::make('priority')
                             ->label('Prioritas')
-                            ->options([
-                                'low' => 'Rendah',
-                                'medium' => 'Sedang',
-                                'high' => 'Tinggi',
-                                'critical' => 'Kritis',
-                            ])
+                            ->options(function () {
+                                $options = [
+                                    'low' => 'Rendah',
+                                    'medium' => 'Sedang',
+                                    'high' => 'Tinggi',
+                                ];
+                                // Hanya admin yang bisa set prioritas Kritis
+                                if (auth()->user()->hasRole('super_admin')) {
+                                    $options['critical'] = 'Kritis';
+                                }
+                                return $options;
+                            })
                             ->required()
                             ->default('medium'),
                     ])->columns(2),
@@ -131,7 +164,8 @@ class TicketResource extends Resource implements HasShieldPermissions
                             ->label('Subjek')
                             ->required()
                             ->maxLength(255)
-                            ->placeholder('Ringkasan singkat masalah'),
+                            ->placeholder('Ringkasan singkat masalah')
+                            ->disabled(fn ($record) => $record !== null && !auth()->user()->hasRole('super_admin')),
 
                         Forms\Components\RichEditor::make('description')
                             ->label('Deskripsi')
@@ -144,7 +178,28 @@ class TicketResource extends Resource implements HasShieldPermissions
                                 'bulletList',
                                 'orderedList',
                             ])
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->disabled(fn ($record) => $record !== null && !auth()->user()->hasRole('super_admin')),
+
+                        Forms\Components\FileUpload::make('attachments')
+                            ->label('Lampiran Foto/File')
+                            ->multiple()
+                            ->image()
+                            ->imageEditor()
+                            ->maxSize(5120) // 5MB
+                            ->maxFiles(5)
+                            ->directory('ticket-attachments')
+                            ->visibility('public')
+                            ->helperText('Upload foto kerusakan atau file pendukung (maks. 5 file, @5MB)')
+                            ->columnSpanFull()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record) {
+                                    $component->state(
+                                        $record->attachments->pluck('file_path')->toArray()
+                                    );
+                                }
+                            }),
                     ]),
 
                 Forms\Components\Section::make('Penanganan')
@@ -400,8 +455,10 @@ class TicketResource extends Resource implements HasShieldPermissions
                     ->visible(fn (Ticket $record) => $record->status === 'resolved'),
 
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn () => auth()->user()->hasRole('super_admin')),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn () => auth()->user()->hasRole('super_admin')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -485,6 +542,19 @@ class TicketResource extends Resource implements HasShieldPermissions
                             ->columnSpanFull(),
                     ]),
 
+                Section::make('Lampiran')
+                    ->schema([
+                        TextEntry::make('attachments')
+                            ->label('')
+                            ->state(function ($record) {
+                                return $record->attachments->count() > 0 ? 'has_attachments' : null;
+                            })
+                            ->formatStateUsing(fn ($record) => view('filament.resources.ticket-resource.partials.attachments', ['attachments' => $record->attachments]))
+                            ->html()
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn ($record) => $record->attachments->count() > 0),
+
                 Section::make('Perangkat Terkait')
                     ->schema([
                         TextEntry::make('device.display_name')
@@ -527,7 +597,7 @@ class TicketResource extends Resource implements HasShieldPermissions
     public static function getRelations(): array
     {
         return [
-            RelationManagers\ResponsesRelationManager::class,
+            // ResponsesRelationManager diganti dengan TicketChatWidget
         ];
     }
 

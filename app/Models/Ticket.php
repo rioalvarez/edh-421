@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Observers\TicketObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy([TicketObserver::class])]
 class Ticket extends Model
 {
     protected $guarded = ['id'];
@@ -56,6 +59,11 @@ class Ticket extends Model
     public function responses(): HasMany
     {
         return $this->hasMany(TicketResponse::class);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(TicketAttachment::class);
     }
 
     // Accessors
