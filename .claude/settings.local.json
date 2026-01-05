@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(php artisan migrate:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Bash(php -r:*)",
+      "Bash(php -m:*)",
+      "Bash(findstr:*)",
+      "Bash(php --ini:*)",
+      "Bash(dir \"C:\\\\xampp\\\\php\\\\ext\\\\php_mysqli.dll\")",
+      "Bash(C:xamppapachebinhttpd.exe -k restart)",
+      "Bash(\"C:/xampp/apache/bin/httpd.exe\":*)",
+      "Bash(curl:*)"
     ]
   }
 }

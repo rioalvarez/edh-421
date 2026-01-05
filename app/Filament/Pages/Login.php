@@ -60,11 +60,14 @@ class Login extends BaseLogin
     {
         parent::mount();
 
-        $this->form->fill([
-            'email' => 'admin@admin.com',
-            'password' => 'password',
-            'remember' => true,
-        ]);
+        // Only pre-fill credentials in local development environment
+        if (app()->environment('local')) {
+            $this->form->fill([
+                'email' => 'admin@admin.com',
+                'password' => 'password',
+                'remember' => true,
+            ]);
+        }
     }
     /**
      * @return array<int | string, string | Form>
