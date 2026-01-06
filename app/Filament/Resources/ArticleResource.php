@@ -6,17 +6,20 @@ use App\Filament\Exports\ArticleExporter;
 use App\Filament\Imports\ArticleImporter;
 use App\Filament\Resources\ArticleResource\Pages;
 use App\Models\Article;
+use App\Models\User;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\SpatieMediaLibraryImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Actions\ImportAction;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 
@@ -57,88 +60,107 @@ class ArticleResource extends Resource implements HasShieldPermissions
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Article Information')
-                    ->schema([
-                        Forms\Components\TextInput::make('title')
-                            ->required()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state))),
+                Forms\Components\Split::make([
+                    // Main Content (Left)
+                    Forms\Components\Section::make()
+                        ->schema([
+                            Forms\Components\TextInput::make('title')
+                                ->required()
+                                ->maxLength(255)
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state))),
 
-                        Forms\Components\TextInput::make('slug')
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true),
+                            Forms\Components\TextInput::make('slug')
+                                ->required()
+                                ->maxLength(255)
+                                ->unique(ignoreRecord: true),
 
-                        Forms\Components\TextInput::make('author_name')
-                            ->label('Author Name')
-                            ->required()
-                            ->maxLength(255),
+                            Forms\Components\RichEditor::make('content')
+                                ->required()
+                                ->columnSpanFull()
+                                ->fileAttachmentsDisk('public')
+                                ->fileAttachmentsDirectory('articles/content')
+                                ->fileAttachmentsVisibility('public')
+                                ->toolbarButtons([
+                                    'attachFiles',
+                                    'bold',
+                                    'italic',
+                                    'underline',
+                                    'strike',
+                                    'link',
+                                    'orderedList',
+                                    'bulletList',
+                                    'h2',
+                                    'h3',
+                                    'blockquote',
+                                    'codeBlock',
+                                    'redo',
+                                    'undo',
+                                ]),
+                        ]),
 
-                        Forms\Components\Select::make('user_id')
-                            ->label('Author (User)')
-                            ->relationship('author', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->nullable(),
+                    // Sidebar (Right)
+                    Forms\Components\Section::make()
+                        ->schema([
+                            Forms\Components\Select::make('status')
+                                ->options([
+                                    'draft' => 'Draft',
+                                    'published' => 'Published',
+                                    'archived' => 'Archived',
+                                ])
+                                ->default('draft')
+                                ->required()
+                                ->native(false),
 
-                        Forms\Components\Select::make('category')
-                            ->options([
-                                'tutorial' => 'Tutorial',
-                                'tips-tricks' => 'Tips & Tricks',
-                                'news' => 'News',
-                                'review' => 'Review',
-                                'troubleshooting' => 'Troubleshooting',
-                                'security' => 'Security',
-                                'other' => 'Other',
-                            ])
-                            ->required()
-                            ->searchable(),
+                            Forms\Components\DateTimePicker::make('published_at')
+                                ->label('Publish Date')
+                                ->nullable(),
 
-                        Forms\Components\Select::make('status')
-                            ->options([
-                                'draft' => 'Draft',
-                                'published' => 'Published',
-                                'archived' => 'Archived',
-                            ])
-                            ->default('draft')
-                            ->required(),
+                            Forms\Components\Select::make('category_id')
+                                ->relationship('category', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->createOptionForm([
+                                    Forms\Components\TextInput::make('name')
+                                        ->required()
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state))),
+                                    Forms\Components\TextInput::make('slug')
+                                        ->required(),
+                                    Forms\Components\Toggle::make('is_active')
+                                        ->default(true),
+                                ])
+                                ->required(),
 
-                        Forms\Components\DateTimePicker::make('published_at')
-                            ->label('Publish Date')
-                            ->nullable(),
-                    ])->columns(2),
+                            Forms\Components\Select::make('user_id')
+                                ->label('Author (User)')
+                                ->relationship('author', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->live()
+                                ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                    if ($state) {
+                                        $user = User::find($state);
+                                        if ($user) {
+                                            $set('author_name', $user->name);
+                                        }
+                                    }
+                                })
+                                ->nullable(),
 
-                Forms\Components\Section::make('Content')
-                    ->schema([
-                        Forms\Components\RichEditor::make('content')
-                            ->required()
-                            ->columnSpanFull()
-                            ->toolbarButtons([
-                                'bold',
-                                'italic',
-                                'underline',
-                                'strike',
-                                'link',
-                                'orderedList',
-                                'bulletList',
-                                'h2',
-                                'h3',
-                                'blockquote',
-                                'codeBlock',
-                                'redo',
-                                'undo',
-                            ]),
-                    ]),
+                            Forms\Components\TextInput::make('author_name')
+                                ->label('Author Alias')
+                                ->required()
+                                ->maxLength(255)
+                                ->helperText('Displayed name if different from user.'),
 
-                Forms\Components\Section::make('Featured Image')
-                    ->schema([
-                        Forms\Components\FileUpload::make('featured_image')
-                            ->image()
-                            ->directory('articles')
-                            ->maxSize(2048)
-                            ->columnSpanFull(),
-                    ])->collapsible(),
+                            SpatieMediaLibraryFileUpload::make('featured_image')
+                                ->collection('featured')
+                                ->image()
+                                ->imageEditor()
+                                ->columnSpanFull(),
+                        ])->grow(false), // Sidebar width fixed/smaller
+                ])->from('md')->columnSpanFull(),
             ]);
     }
 
@@ -146,7 +168,8 @@ class ArticleResource extends Resource implements HasShieldPermissions
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('featured_image')
+                SpatieMediaLibraryImageColumn::make('featured_image')
+                    ->collection('featured')
                     ->label('Image')
                     ->circular()
                     ->defaultImageUrl(fn () => 'https://ui-avatars.com/api/?name=Article&background=random'),
@@ -154,24 +177,19 @@ class ArticleResource extends Resource implements HasShieldPermissions
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->sortable()
-                    ->limit(40),
+                    ->limit(40)
+                    ->wrap(),
 
                 Tables\Columns\TextColumn::make('author_name')
                     ->label('Author')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
-                Tables\Columns\TextColumn::make('category')
+                Tables\Columns\TextColumn::make('category.name')
+                    ->label('Category')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'tutorial' => 'success',
-                        'tips-tricks' => 'info',
-                        'news' => 'warning',
-                        'review' => 'primary',
-                        'troubleshooting' => 'danger',
-                        'security' => 'gray',
-                        default => 'secondary',
-                    })
+                    ->sortable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('status')
@@ -197,11 +215,6 @@ class ArticleResource extends Resource implements HasShieldPermissions
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -212,15 +225,7 @@ class ArticleResource extends Resource implements HasShieldPermissions
                     ]),
 
                 Tables\Filters\SelectFilter::make('category')
-                    ->options([
-                        'tutorial' => 'Tutorial',
-                        'tips-tricks' => 'Tips & Tricks',
-                        'news' => 'News',
-                        'review' => 'Review',
-                        'troubleshooting' => 'Troubleshooting',
-                        'security' => 'Security',
-                        'other' => 'Other',
-                    ]),
+                    ->relationship('category', 'name'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -264,7 +269,7 @@ class ArticleResource extends Resource implements HasShieldPermissions
                     TextEntry::make('title'),
                     TextEntry::make('slug'),
                     TextEntry::make('author_name')->label('Author'),
-                    TextEntry::make('category')->badge(),
+                    TextEntry::make('category.name')->label('Category')->badge(),
                     TextEntry::make('status')->badge(),
                     TextEntry::make('views'),
                     TextEntry::make('published_at')->dateTime(),
@@ -277,7 +282,8 @@ class ArticleResource extends Resource implements HasShieldPermissions
                 ]),
 
                 Section::make('Featured Image')->schema([
-                    ImageEntry::make('featured_image')
+                    SpatieMediaLibraryImageEntry::make('featured_image')
+                        ->collection('featured')
                         ->columnSpanFull(),
                 ])->collapsible(),
             ]);

@@ -17,6 +17,7 @@ class Article extends Model implements HasMedia
 
     protected $fillable = [
         'user_id',
+        'category_id',
         'title',
         'slug',
         'author_name',
@@ -56,6 +57,14 @@ class Article extends Model implements HasMedia
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Get the category of the article.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 
     /**
