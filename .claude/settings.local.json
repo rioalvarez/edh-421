@@ -12,7 +12,9 @@
       "Bash(\"C:/xampp/apache/bin/httpd.exe\":*)",
       "Bash(curl:*)",
       "Bash(xargs:*)",
-      "Bash(more:*)"
+      "Bash(more:*)",
+      "Bash(php:*)",
+      "Bash(php -l:*)"
     ]
   }
 }

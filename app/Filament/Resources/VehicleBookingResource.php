@@ -121,29 +121,31 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                         Forms\Components\Select::make('vehicle_id')
                             ->label('Kendaraan')
                             ->options(function () {
-                                return Vehicle::available()
+                                return Vehicle::active()
                                     ->get()
-                                    ->mapWithKeys(fn ($v) => [$v->id => "{$v->plate_number} - {$v->brand} {$v->model}"]);
+                                    ->mapWithKeys(fn ($v) => [
+                                        $v->id => "{$v->plate_number} - {$v->brand} {$v->model} ({$v->capacity} org)"
+                                    ]);
                             })
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->reactive()
-                            ->afterStateUpdated(fn (callable $set) => $set('_availability_check', null)),
+                            ->live()
+                            ->afterStateUpdated(fn (Forms\Set $set) => $set('_check_trigger', now()->timestamp)),
 
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Tanggal Mulai')
                             ->required()
                             ->minDate(today())
-                            ->reactive()
-                            ->afterStateUpdated(fn (callable $set) => $set('_availability_check', null)),
+                            ->live()
+                            ->afterStateUpdated(fn (Forms\Set $set) => $set('_check_trigger', now()->timestamp)),
 
                         Forms\Components\DatePicker::make('end_date')
                             ->label('Tanggal Selesai')
                             ->required()
                             ->minDate(fn (Forms\Get $get) => $get('start_date') ?? today())
-                            ->reactive()
-                            ->afterStateUpdated(fn (callable $set) => $set('_availability_check', null))
+                            ->live()
+                            ->afterStateUpdated(fn (Forms\Set $set) => $set('_check_trigger', now()->timestamp))
                             ->rules([
                                 fn (Forms\Get $get) => function (string $attribute, $value, \Closure $fail) use ($get) {
                                     $vehicleId = $get('vehicle_id');
@@ -161,6 +163,75 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                         Forms\Components\TimePicker::make('departure_time')
                             ->label('Jam Keberangkatan')
                             ->seconds(false),
+
+                        Forms\Components\Hidden::make('_check_trigger'),
+
+                        // Real-time availability indicator
+                        Forms\Components\Placeholder::make('availability_status')
+                            ->label('Status Ketersediaan')
+                            ->content(function (Forms\Get $get) {
+                                $vehicleId = $get('vehicle_id');
+                                $startDate = $get('start_date');
+                                $endDate = $get('end_date');
+                                $recordId = $get('id');
+
+                                if (!$vehicleId || !$startDate || !$endDate) {
+                                    return new \Illuminate\Support\HtmlString(
+                                        '<div class="flex items-center gap-2 text-gray-500">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <span>Pilih kendaraan dan tanggal untuk cek ketersediaan</span>
+                                        </div>'
+                                    );
+                                }
+
+                                $isAvailable = VehicleBooking::isVehicleAvailable($vehicleId, $startDate, $endDate, $recordId);
+                                $vehicle = Vehicle::find($vehicleId);
+
+                                if ($isAvailable) {
+                                    $startFormatted = \Carbon\Carbon::parse($startDate)->translatedFormat('d M Y');
+                                    $endFormatted = \Carbon\Carbon::parse($endDate)->translatedFormat('d M Y');
+
+                                    return new \Illuminate\Support\HtmlString(
+                                        '<div class="flex items-center gap-2 text-success-600 dark:text-success-400 font-medium">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <span>Tersedia! ' . $vehicle->plate_number . ' dapat dipinjam pada ' . $startFormatted . ' - ' . $endFormatted . '</span>
+                                        </div>'
+                                    );
+                                } else {
+                                    // Get conflicting booking info
+                                    $conflict = VehicleBooking::where('vehicle_id', $vehicleId)
+                                        ->whereIn('status', ['approved', 'in_use'])
+                                        ->where(function ($q) use ($startDate, $endDate) {
+                                            $q->whereBetween('start_date', [$startDate, $endDate])
+                                                ->orWhereBetween('end_date', [$startDate, $endDate])
+                                                ->orWhere(function ($q2) use ($startDate, $endDate) {
+                                                    $q2->where('start_date', '<=', $startDate)
+                                                        ->where('end_date', '>=', $endDate);
+                                                });
+                                        })
+                                        ->when($recordId, fn ($q) => $q->where('id', '!=', $recordId))
+                                        ->with('user')
+                                        ->first();
+
+                                    $conflictInfo = $conflict
+                                        ? "Sudah dibooking oleh {$conflict->user->name} ({$conflict->start_date->format('d M')} - {$conflict->end_date->format('d M')})"
+                                        : "Kendaraan tidak tersedia pada tanggal tersebut";
+
+                                    return new \Illuminate\Support\HtmlString(
+                                        '<div class="flex items-center gap-2 text-danger-600 dark:text-danger-400 font-medium">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <span>' . $conflictInfo . '</span>
+                                        </div>'
+                                    );
+                                }
+                            })
+                            ->columnSpanFull(),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Data Surat Tugas')
