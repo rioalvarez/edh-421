@@ -10,7 +10,9 @@
       "Bash(dir \"C:\\\\xampp\\\\php\\\\ext\\\\php_mysqli.dll\")",
       "Bash(C:xamppapachebinhttpd.exe -k restart)",
       "Bash(\"C:/xampp/apache/bin/httpd.exe\":*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(xargs:*)",
+      "Bash(more:*)"
     ]
   }
 }
