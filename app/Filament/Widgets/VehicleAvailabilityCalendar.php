@@ -13,7 +13,7 @@ class VehicleAvailabilityCalendar extends Widget
 
     protected static ?string $heading = 'Kalender Ketersediaan Kendaraan';
 
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 2;
 
     protected int | string | array $columnSpan = 'full';
 
