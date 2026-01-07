@@ -14,15 +14,20 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('nip', 9)->unique()->comment('9 digit NIP untuk login');
+            $table->string('email')->nullable()->unique();
+            $table->string('phone_number', 20)->nullable();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable()->comment('Nullable untuk SSO users');
+            $table->string('avatar_url')->nullable();
+            $table->string('theme')->nullable()->default('default');
+            $table->string('theme_color')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
+            $table->string('nip', 9)->primary()->comment('NIP sebagai identifier');
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });

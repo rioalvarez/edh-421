@@ -38,19 +38,39 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
-                Section::make(
-                    'Informasi User'
-                )->schema([
-                            TextInput::make('name')
-                                ->label('Nama')
-                                ->required(),
-                            TextInput::make('email')
-                                ->label('Email')
-                                ->required(),
-                            TextInput::make('password')
-                                ->label('Password')
-                                ->required(),
-                        ]),
+                Section::make('Informasi User')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('Nama')
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('nip')
+                            ->label('NIP')
+                            ->required()
+                            ->numeric()
+                            ->minLength(9)
+                            ->maxLength(9)
+                            ->unique(ignoreRecord: true)
+                            ->validationMessages([
+                                'unique' => 'NIP sudah terdaftar.',
+                            ]),
+                        TextInput::make('phone_number')
+                            ->label('No. HP')
+                            ->tel()
+                            ->maxLength(20),
+                        TextInput::make('email')
+                            ->label('Email')
+                            ->email()
+                            ->maxLength(255)
+                            ->unique(ignoreRecord: true),
+                        TextInput::make('password')
+                            ->label('Password')
+                            ->password()
+                            ->revealable()
+                            ->required(fn(string $operation): bool => $operation === 'create')
+                            ->dehydrated(fn(?string $state): bool => filled($state))
+                            ->dehydrateStateUsing(fn(string $state): string => bcrypt($state)),
+                    ])->columns(2),
             ]);
     }
 
@@ -71,20 +91,35 @@ class UserResource extends Resource
                         ->getStateUsing(fn($record) => $record->avatar_url
                             ? $record->avatar_url
                             : "https://ui-avatars.com/api/?name=" . urlencode($record->name)),
-                    Tables\Columns\TextColumn::make('name')
-                        ->label('Nama')
-                        ->searchable()
-                        ->weight(FontWeight::Bold),
+                    Tables\Columns\Layout\Stack::make([
+                        Tables\Columns\TextColumn::make('name')
+                            ->label('Nama')
+                            ->searchable()
+                            ->weight(FontWeight::Bold),
+                        Tables\Columns\TextColumn::make('nip')
+                            ->label('NIP')
+                            ->searchable()
+                            ->icon('heroicon-o-identification')
+                            ->color('gray')
+                            ->size('sm'),
+                    ])->space(1),
                     Tables\Columns\Layout\Stack::make([
                         Tables\Columns\TextColumn::make('roles.name')
                             ->label('Role')
                             ->searchable()
                             ->icon('heroicon-o-shield-check')
                             ->grow(false),
+                        Tables\Columns\TextColumn::make('phone_number')
+                            ->label('No. HP')
+                            ->icon('heroicon-m-phone')
+                            ->searchable()
+                            ->placeholder('-')
+                            ->grow(false),
                         Tables\Columns\TextColumn::make('email')
                             ->label('Email')
                             ->icon('heroicon-m-envelope')
                             ->searchable()
+                            ->placeholder('-')
                             ->grow(false),
                     ])->alignStart()->visibleFrom('lg')->space(1)
                 ]),
@@ -152,10 +187,24 @@ class UserResource extends Resource
     {
         return $infolist
             ->schema([
-                InfolistSection::make('Informasi User')->schema([
-                    TextEntry::make('name')->label('Nama'),
-                    TextEntry::make('email')->label('Email'),
-                ]),
+                InfolistSection::make('Informasi User')
+                    ->schema([
+                        TextEntry::make('name')->label('Nama'),
+                        TextEntry::make('nip')
+                            ->label('NIP')
+                            ->icon('heroicon-o-identification'),
+                        TextEntry::make('phone_number')
+                            ->label('No. HP')
+                            ->icon('heroicon-m-phone')
+                            ->placeholder('-'),
+                        TextEntry::make('email')
+                            ->label('Email')
+                            ->icon('heroicon-m-envelope')
+                            ->placeholder('-'),
+                        TextEntry::make('roles.name')
+                            ->label('Role')
+                            ->icon('heroicon-o-shield-check'),
+                    ])->columns(2),
             ]);
     }
 }

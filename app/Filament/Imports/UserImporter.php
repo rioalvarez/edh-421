@@ -15,11 +15,19 @@ class UserImporter extends Importer
     {
         return [
             ImportColumn::make('name')
+                ->label('Nama')
                 ->requiredMapping()
                 ->rules(['required', 'max:255']),
-            ImportColumn::make('email')
+            ImportColumn::make('nip')
+                ->label('NIP')
                 ->requiredMapping()
-                ->rules(['required', 'email', 'max:255']),
+                ->rules(['required', 'digits:9', 'unique:users,nip']),
+            ImportColumn::make('phone_number')
+                ->label('No. HP')
+                ->rules(['nullable', 'max:20']),
+            ImportColumn::make('email')
+                ->label('Email')
+                ->rules(['nullable', 'email', 'max:255']),
             ImportColumn::make('password')
                 ->rules(['max:255']),
         ];

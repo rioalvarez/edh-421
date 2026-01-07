@@ -14,7 +14,9 @@
       "Bash(xargs:*)",
       "Bash(more:*)",
       "Bash(php:*)",
-      "Bash(php -l:*)"
+      "Bash(php -l:*)",
+      "Bash(del fix_nip.php)",
+      "Bash(ls:*)"
     ]
   }
 }

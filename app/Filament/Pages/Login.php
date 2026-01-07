@@ -28,11 +28,11 @@ class Login extends BaseLogin
 
         $data = $this->form->getState();
 
-        // Check if user exists and was created through social login
-        $user = \App\Models\User::where('email', $data['email'])->first();
+        // Check if user exists and was created through social login (no password)
+        $user = \App\Models\User::where('nip', $data['nip'])->first();
         if ($user && is_null($user->password)) {
             throw ValidationException::withMessages([
-                'data.email' => 'This account was created using social login. Please login with Google.',
+                'data.nip' => 'Akun ini dibuat melalui social login. Silakan login dengan Google.',
             ]);
         }
 
@@ -63,12 +63,13 @@ class Login extends BaseLogin
         // Only pre-fill credentials in local development environment
         if (app()->environment('local')) {
             $this->form->fill([
-                'email' => 'admin@admin.com',
+                'nip' => '123456789',
                 'password' => 'password',
                 'remember' => true,
             ]);
         }
     }
+
     /**
      * @return array<int | string, string | Form>
      */
@@ -78,12 +79,41 @@ class Login extends BaseLogin
             'form' => $this->form(
                 $this->makeForm()
                     ->schema([
-                        $this->getEmailFormComponent(),
+                        $this->getNipFormComponent(),
                         $this->getPasswordFormComponent(),
                         $this->getRememberFormComponent(),
                     ])
                     ->statePath('data'),
             ),
         ];
+    }
+
+    protected function getNipFormComponent(): Component
+    {
+        return TextInput::make('nip')
+            ->label('NIP')
+            ->placeholder('Masukkan 9 digit NIP')
+            ->required()
+            ->numeric()
+            ->minLength(9)
+            ->maxLength(9)
+            ->autocomplete('username')
+            ->autofocus()
+            ->extraInputAttributes(['inputmode' => 'numeric']);
+    }
+
+    protected function getCredentialsFromFormData(array $data): array
+    {
+        return [
+            'nip' => $data['nip'],
+            'password' => $data['password'],
+        ];
+    }
+
+    protected function throwFailureValidationException(): never
+    {
+        throw ValidationException::withMessages([
+            'data.nip' => __('filament-panels::pages/auth/login.messages.failed'),
+        ]);
     }
 }

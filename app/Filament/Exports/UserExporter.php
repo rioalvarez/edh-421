@@ -16,11 +16,14 @@ class UserExporter extends Exporter
         return [
             ExportColumn::make('id')
                 ->label('ID'),
-            ExportColumn::make('name'),
-            ExportColumn::make('email'),
-            // ExportColumn::make('email_verified_at'),
-            // ExportColumn::make('created_at'),
-            // ExportColumn::make('updated_at'),
+            ExportColumn::make('name')
+                ->label('Nama'),
+            ExportColumn::make('nip')
+                ->label('NIP'),
+            ExportColumn::make('phone_number')
+                ->label('No. HP'),
+            ExportColumn::make('email')
+                ->label('Email'),
             ExportColumn::make('avatar_url'),
         ];
     }

@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Login;
+use App\Filament\Pages\Register;
 use App\Models\User;
 use App\Settings\KaidoSetting;
 use Filament\Http\Middleware\Authenticate;
@@ -57,7 +58,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('')
             ->when($this->settings->login_enabled ?? true, fn($panel) => $panel->login(Login::class))
-            ->when($this->settings->registration_enabled ?? true, fn($panel) => $panel->registration())
+            ->when($this->settings->registration_enabled ?? true, fn($panel) => $panel->registration(Register::class))
             ->when($this->settings->password_reset_enabled ?? true, fn($panel) => $panel->passwordReset())
             ->emailVerification()
             ->colors([
@@ -133,13 +134,23 @@ class AdminPanelProvider extends PanelProvider
                         ->stateless(false)
                 ])->registration(true)
                 ->createUserUsing(function (string $provider, SocialiteUserContract $oauthUser, FilamentSocialitePlugin $plugin) {
-                    $user = User::firstOrNew([
-                        'email' => $oauthUser->getEmail(),
-                    ]);
-                    $user->name = $oauthUser->getName();
-                    $user->email = $oauthUser->getEmail();
-                    $user->email_verified_at = now();
-                    $user->save();
+                    // Find existing user by email
+                    $user = User::where('email', $oauthUser->getEmail())->first();
+
+                    if (!$user) {
+                        // Generate temporary NIP for SSO users (starting with 0)
+                        // Format: 0XXXXXXXX (9 digits, starts with 0 to indicate SSO user)
+                        do {
+                            $tempNip = '0' . str_pad(random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+                        } while (User::where('nip', $tempNip)->exists());
+
+                        $user = User::create([
+                            'name' => $oauthUser->getName(),
+                            'nip' => $tempNip,
+                            'email' => $oauthUser->getEmail(),
+                            'email_verified_at' => now(),
+                        ]);
+                    }
 
                     return $user;
                 });
