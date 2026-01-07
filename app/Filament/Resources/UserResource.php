@@ -30,18 +30,25 @@ class UserResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
+    protected static ?string $modelLabel = 'User';
+
+    protected static ?string $pluralModelLabel = 'Daftar User';
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Section::make(
-                    'User Information'
+                    'Informasi User'
                 )->schema([
                             TextInput::make('name')
+                                ->label('Nama')
                                 ->required(),
                             TextInput::make('email')
+                                ->label('Email')
                                 ->required(),
                             TextInput::make('password')
+                                ->label('Password')
                                 ->required(),
                         ]),
             ]);
@@ -65,14 +72,17 @@ class UserResource extends Resource
                             ? $record->avatar_url
                             : "https://ui-avatars.com/api/?name=" . urlencode($record->name)),
                     Tables\Columns\TextColumn::make('name')
+                        ->label('Nama')
                         ->searchable()
                         ->weight(FontWeight::Bold),
                     Tables\Columns\Layout\Stack::make([
                         Tables\Columns\TextColumn::make('roles.name')
+                            ->label('Role')
                             ->searchable()
                             ->icon('heroicon-o-shield-check')
                             ->grow(false),
                         Tables\Columns\TextColumn::make('email')
+                            ->label('Email')
                             ->icon('heroicon-m-envelope')
                             ->searchable()
                             ->grow(false),
@@ -82,6 +92,7 @@ class UserResource extends Resource
             ->filters([
                 //
                 SelectFilter::make('roles')
+                    ->label('Role')
                     ->relationship('roles', 'name')
                     ->multiple()
                     ->preload(),
@@ -90,9 +101,11 @@ class UserResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Action::make('Set Role')
+                    ->label('Atur Role')
                     ->icon('heroicon-m-adjustments-vertical')
                     ->form([
                         Select::make('role')
+                            ->label('Role')
                             ->relationship('roles', 'name')
                             ->multiple()
                             ->required()
@@ -139,9 +152,9 @@ class UserResource extends Resource
     {
         return $infolist
             ->schema([
-                InfolistSection::make('User Information')->schema([
-                    TextEntry::make('name'),
-                    TextEntry::make('email'),
+                InfolistSection::make('Informasi User')->schema([
+                    TextEntry::make('name')->label('Nama'),
+                    TextEntry::make('email')->label('Email'),
                 ]),
             ]);
     }

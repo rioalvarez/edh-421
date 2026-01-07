@@ -26,11 +26,15 @@ class DeviceResource extends Resource implements HasShieldPermissions
 
     protected static ?string $navigationIcon = 'heroicon-o-computer-desktop';
 
-    protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationGroup = 'Inventaris';
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel = 'Devices';
+    protected static ?string $navigationLabel = 'Device';
+
+    protected static ?string $modelLabel = 'Device';
+
+    protected static ?string $pluralModelLabel = 'Device';
 
     public static function getPermissionPrefixes(): array
     {
@@ -48,9 +52,10 @@ class DeviceResource extends Resource implements HasShieldPermissions
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Device Information')
+                Forms\Components\Section::make('Informasi Device')
                     ->schema([
                         Forms\Components\Select::make('type')
+                            ->label('Tipe')
                             ->options([
                                 'laptop' => 'Laptop',
                                 'desktop' => 'Desktop',
@@ -61,119 +66,126 @@ class DeviceResource extends Resource implements HasShieldPermissions
                             ->default('desktop'),
 
                         Forms\Components\Select::make('user_id')
-                            ->label('Assigned To')
+                            ->label('Pengguna')
                             ->relationship('user', 'name')
                             ->searchable()
                             ->preload()
                             ->nullable()
-                            ->helperText('Leave empty if device is not assigned'),
+                            ->helperText('Kosongkan jika device belum digunakan'),
 
                         Forms\Components\TextInput::make('hostname')
                             ->maxLength(255)
-                            ->placeholder('e.g., PC-FINANCE-01'),
+                            ->placeholder('cth: PC-FINANCE-01'),
 
                         Forms\Components\TextInput::make('ip_address')
                             ->label('IP Address')
                             ->maxLength(45)
-                            ->placeholder('e.g., 192.168.1.100'),
+                            ->placeholder('cth: 192.168.1.100'),
 
                         Forms\Components\TextInput::make('mac_address')
                             ->label('MAC Address')
                             ->maxLength(17)
-                            ->placeholder('e.g., 00:1A:2B:3C:4D:5E'),
+                            ->placeholder('cth: 00:1A:2B:3C:4D:5E'),
 
                         Forms\Components\TextInput::make('brand')
+                            ->label('Merek')
                             ->maxLength(255)
-                            ->placeholder('e.g., Dell, HP, Lenovo'),
+                            ->placeholder('cth: Dell, HP, Lenovo'),
 
                         Forms\Components\TextInput::make('model')
+                            ->label('Model')
                             ->maxLength(255)
-                            ->placeholder('e.g., Latitude 5520'),
+                            ->placeholder('cth: Latitude 5520'),
 
                         Forms\Components\TextInput::make('serial_number')
-                            ->label('Serial Number')
+                            ->label('Nomor Seri')
                             ->maxLength(255)
                             ->unique(ignoreRecord: true)
-                            ->placeholder('e.g., ABC123XYZ'),
+                            ->placeholder('cth: ABC123XYZ'),
 
                         Forms\Components\TextInput::make('asset_tag')
-                            ->label('Asset Tag')
+                            ->label('Tag Aset')
                             ->maxLength(255)
                             ->unique(ignoreRecord: true)
-                            ->placeholder('e.g., AST-2024-001'),
+                            ->placeholder('cth: AST-2024-001'),
 
                         Forms\Components\TextInput::make('location')
+                            ->label('Lokasi')
                             ->maxLength(255)
-                            ->placeholder('e.g., Office Floor 2, Room A'),
+                            ->placeholder('cth: Lantai 2, Ruang A'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('System Specifications')
+                Forms\Components\Section::make('Spesifikasi Sistem')
                     ->schema([
                         Forms\Components\TextInput::make('os')
-                            ->label('Operating System')
+                            ->label('Sistem Operasi')
                             ->maxLength(255)
-                            ->placeholder('e.g., Windows 11 Pro'),
+                            ->placeholder('cth: Windows 11 Pro'),
 
                         Forms\Components\TextInput::make('os_version')
-                            ->label('OS Version')
+                            ->label('Versi OS')
                             ->maxLength(255)
-                            ->placeholder('e.g., 22H2'),
+                            ->placeholder('cth: 22H2'),
 
                         Forms\Components\TextInput::make('processor')
+                            ->label('Prosesor')
                             ->maxLength(255)
-                            ->placeholder('e.g., Intel Core i7-1165G7'),
+                            ->placeholder('cth: Intel Core i7-1165G7'),
 
                         Forms\Components\TextInput::make('ram')
                             ->label('RAM')
                             ->maxLength(255)
-                            ->placeholder('e.g., 16GB DDR4'),
+                            ->placeholder('cth: 16GB DDR4'),
 
                         Forms\Components\Select::make('storage_type')
+                            ->label('Tipe Penyimpanan')
                             ->options([
                                 'SSD' => 'SSD',
                                 'HDD' => 'HDD',
                                 'NVMe' => 'NVMe',
                                 'Hybrid' => 'Hybrid',
                             ])
-                            ->placeholder('Select storage type'),
+                            ->placeholder('Pilih tipe penyimpanan'),
 
                         Forms\Components\TextInput::make('storage_capacity')
-                            ->label('Storage Capacity')
+                            ->label('Kapasitas Penyimpanan')
                             ->maxLength(255)
-                            ->placeholder('e.g., 512GB'),
+                            ->placeholder('cth: 512GB'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Status & Dates')
+                Forms\Components\Section::make('Status & Tanggal')
                     ->schema([
                         Forms\Components\Select::make('condition')
+                            ->label('Kondisi')
                             ->options([
-                                'excellent' => 'Excellent',
-                                'good' => 'Good',
-                                'fair' => 'Fair',
-                                'poor' => 'Poor',
-                                'broken' => 'Broken',
+                                'excellent' => 'Sangat Baik',
+                                'good' => 'Baik',
+                                'fair' => 'Cukup',
+                                'poor' => 'Buruk',
+                                'broken' => 'Rusak',
                             ])
                             ->default('good')
                             ->required(),
 
                         Forms\Components\Select::make('status')
+                            ->label('Status')
                             ->options([
-                                'active' => 'Active',
-                                'inactive' => 'Inactive',
-                                'maintenance' => 'Maintenance',
-                                'retired' => 'Retired',
+                                'active' => 'Aktif',
+                                'inactive' => 'Nonaktif',
+                                'maintenance' => 'Perbaikan',
+                                'retired' => 'Pensiun',
                             ])
                             ->default('active')
                             ->required(),
 
                         Forms\Components\DatePicker::make('purchase_date')
-                            ->label('Purchase Date'),
+                            ->label('Tanggal Pembelian'),
 
                         Forms\Components\DatePicker::make('warranty_expiry')
-                            ->label('Warranty Expiry'),
+                            ->label('Habis Masa Garansi'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Additional Attributes')
+                Forms\Components\Section::make('Atribut Tambahan')
                     ->schema(function () {
                         $attributes = DeviceAttribute::active()->ordered()->get();
                         $fields = [];
@@ -213,12 +225,13 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     ->columns(2)
                     ->visible(fn () => DeviceAttribute::active()->exists()),
 
-                Forms\Components\Section::make('Notes')
+                Forms\Components\Section::make('Catatan')
                     ->schema([
                         Forms\Components\Textarea::make('notes')
+                            ->label('Catatan')
                             ->columnSpanFull()
                             ->rows(3)
-                            ->placeholder('Additional notes about this device...'),
+                            ->placeholder('Catatan tambahan tentang device ini...'),
                     ])->collapsible(),
             ]);
     }
@@ -234,6 +247,7 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     ->default('-'),
 
                 Tables\Columns\TextColumn::make('type')
+                    ->label('Tipe')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'laptop' => 'info',
@@ -244,12 +258,12 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     }),
 
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Assigned To')
+                    ->label('Pengguna')
                     ->searchable()
                     ->sortable()
-                    ->default('Unassigned')
+                    ->default('Belum Ada')
                     ->badge()
-                    ->color(fn ($state) => $state === 'Unassigned' ? 'gray' : 'success'),
+                    ->color(fn ($state) => $state === 'Belum Ada' ? 'gray' : 'success'),
 
                 Tables\Columns\TextColumn::make('ip_address')
                     ->label('IP Address')
@@ -257,15 +271,17 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('brand')
+                    ->label('Merek')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('model')
+                    ->label('Model')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('serial_number')
-                    ->label('Serial No.')
+                    ->label('No. Seri')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
@@ -279,7 +295,16 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('condition')
+                    ->label('Kondisi')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'excellent' => 'Sangat Baik',
+                        'good' => 'Baik',
+                        'fair' => 'Cukup',
+                        'poor' => 'Buruk',
+                        'broken' => 'Rusak',
+                        default => $state,
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'excellent' => 'success',
                         'good' => 'info',
@@ -290,7 +315,15 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     }),
 
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'active' => 'Aktif',
+                        'inactive' => 'Nonaktif',
+                        'maintenance' => 'Perbaikan',
+                        'retired' => 'Pensiun',
+                        default => $state,
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'active' => 'success',
                         'inactive' => 'gray',
@@ -300,19 +333,21 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     }),
 
                 Tables\Columns\TextColumn::make('warranty_expiry')
-                    ->label('Warranty')
+                    ->label('Garansi')
                     ->date()
                     ->sortable()
                     ->color(fn ($record) => $record?->isWarrantyExpired() ? 'danger' : null)
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
+                    ->label('Tipe')
                     ->options([
                         'laptop' => 'Laptop',
                         'desktop' => 'Desktop',
@@ -321,33 +356,35 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     ]),
 
                 Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
                     ->options([
-                        'active' => 'Active',
-                        'inactive' => 'Inactive',
-                        'maintenance' => 'Maintenance',
-                        'retired' => 'Retired',
+                        'active' => 'Aktif',
+                        'inactive' => 'Nonaktif',
+                        'maintenance' => 'Perbaikan',
+                        'retired' => 'Pensiun',
                     ]),
 
                 Tables\Filters\SelectFilter::make('condition')
+                    ->label('Kondisi')
                     ->options([
-                        'excellent' => 'Excellent',
-                        'good' => 'Good',
-                        'fair' => 'Fair',
-                        'poor' => 'Poor',
-                        'broken' => 'Broken',
+                        'excellent' => 'Sangat Baik',
+                        'good' => 'Baik',
+                        'fair' => 'Cukup',
+                        'poor' => 'Buruk',
+                        'broken' => 'Rusak',
                     ]),
 
                 Tables\Filters\SelectFilter::make('user_id')
-                    ->label('Assigned To')
+                    ->label('Pengguna')
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload(),
 
                 Tables\Filters\TernaryFilter::make('assigned')
-                    ->label('Assignment Status')
-                    ->placeholder('All')
-                    ->trueLabel('Assigned')
-                    ->falseLabel('Unassigned')
+                    ->label('Status Penggunaan')
+                    ->placeholder('Semua')
+                    ->trueLabel('Digunakan')
+                    ->falseLabel('Belum Digunakan')
                     ->queries(
                         true: fn ($query) => $query->whereNotNull('user_id'),
                         false: fn ($query) => $query->whereNull('user_id'),
@@ -361,11 +398,11 @@ class DeviceResource extends Resource implements HasShieldPermissions
             ->headerActions([
                 ExportAction::make()
                     ->exporter(DeviceExporter::class)
-                    ->label('Export')
+                    ->label('Ekspor')
                     ->icon('heroicon-o-arrow-down-tray'),
                 ImportAction::make()
                     ->importer(DeviceImporter::class)
-                    ->label('Import')
+                    ->label('Impor')
                     ->icon('heroicon-o-arrow-up-tray'),
             ])
             ->bulkActions([
@@ -380,39 +417,59 @@ class DeviceResource extends Resource implements HasShieldPermissions
     {
         return $infolist
             ->schema([
-                Section::make('Device Information')->schema([
-                    TextEntry::make('type')->badge(),
-                    TextEntry::make('user.name')->label('Assigned To')->default('Unassigned'),
+                Section::make('Informasi Device')->schema([
+                    TextEntry::make('type')->label('Tipe')->badge(),
+                    TextEntry::make('user.name')->label('Pengguna')->default('Belum Ada'),
                     TextEntry::make('hostname')->default('-'),
                     TextEntry::make('ip_address')->label('IP Address')->default('-'),
                     TextEntry::make('mac_address')->label('MAC Address')->default('-'),
-                    TextEntry::make('brand')->default('-'),
-                    TextEntry::make('model')->default('-'),
-                    TextEntry::make('serial_number')->label('Serial Number')->default('-'),
-                    TextEntry::make('asset_tag')->label('Asset Tag')->default('-'),
-                    TextEntry::make('location')->default('-'),
+                    TextEntry::make('brand')->label('Merek')->default('-'),
+                    TextEntry::make('model')->label('Model')->default('-'),
+                    TextEntry::make('serial_number')->label('Nomor Seri')->default('-'),
+                    TextEntry::make('asset_tag')->label('Tag Aset')->default('-'),
+                    TextEntry::make('location')->label('Lokasi')->default('-'),
                 ])->columns(2),
 
-                Section::make('System Specifications')->schema([
-                    TextEntry::make('os')->label('Operating System')->default('-'),
-                    TextEntry::make('os_version')->label('OS Version')->default('-'),
-                    TextEntry::make('processor')->default('-'),
+                Section::make('Spesifikasi Sistem')->schema([
+                    TextEntry::make('os')->label('Sistem Operasi')->default('-'),
+                    TextEntry::make('os_version')->label('Versi OS')->default('-'),
+                    TextEntry::make('processor')->label('Prosesor')->default('-'),
                     TextEntry::make('ram')->label('RAM')->default('-'),
-                    TextEntry::make('storage_type')->default('-'),
-                    TextEntry::make('storage_capacity')->default('-'),
+                    TextEntry::make('storage_type')->label('Tipe Penyimpanan')->default('-'),
+                    TextEntry::make('storage_capacity')->label('Kapasitas Penyimpanan')->default('-'),
                 ])->columns(2),
 
-                Section::make('Status & Dates')->schema([
-                    TextEntry::make('condition')->badge(),
-                    TextEntry::make('status')->badge(),
-                    TextEntry::make('purchase_date')->date()->default('-'),
-                    TextEntry::make('warranty_expiry')->date()->default('-'),
+                Section::make('Status & Tanggal')->schema([
+                    TextEntry::make('condition')
+                        ->label('Kondisi')
+                        ->badge()
+                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                            'excellent' => 'Sangat Baik',
+                            'good' => 'Baik',
+                            'fair' => 'Cukup',
+                            'poor' => 'Buruk',
+                            'broken' => 'Rusak',
+                            default => $state,
+                        }),
+                    TextEntry::make('status')
+                        ->label('Status')
+                        ->badge()
+                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                            'active' => 'Aktif',
+                            'inactive' => 'Nonaktif',
+                            'maintenance' => 'Perbaikan',
+                            'retired' => 'Pensiun',
+                            default => $state,
+                        }),
+                    TextEntry::make('purchase_date')->label('Tanggal Pembelian')->date()->default('-'),
+                    TextEntry::make('warranty_expiry')->label('Habis Masa Garansi')->date()->default('-'),
                 ])->columns(2),
 
-                Section::make('Notes')->schema([
+                Section::make('Catatan')->schema([
                     TextEntry::make('notes')
+                        ->label('Catatan')
                         ->columnSpanFull()
-                        ->default('No notes'),
+                        ->default('Tidak ada catatan'),
                 ])->collapsible(),
             ]);
     }

@@ -21,13 +21,15 @@ class DeviceAttributeResource extends Resource implements HasShieldPermissions
 
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
 
-    protected static ?string $navigationGroup = 'Inventory';
+    protected static ?string $navigationGroup = 'Inventaris';
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationLabel = 'Device Attributes';
+    protected static ?string $navigationLabel = 'Atribut Device';
 
-    protected static ?string $modelLabel = 'Device Attribute';
+    protected static ?string $modelLabel = 'Atribut Device';
+
+    protected static ?string $pluralModelLabel = 'Atribut Device';
 
     public static function getPermissionPrefixes(): array
     {
@@ -45,59 +47,64 @@ class DeviceAttributeResource extends Resource implements HasShieldPermissions
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Attribute Information')
+                Forms\Components\Section::make('Informasi Atribut')
                     ->schema([
                         Forms\Components\TextInput::make('name')
+                            ->label('Nama')
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state)))
-                            ->placeholder('e.g., GPU, Monitor Size, License Key'),
+                            ->placeholder('cth: GPU, Ukuran Monitor, Kunci Lisensi'),
 
                         Forms\Components\TextInput::make('slug')
+                            ->label('Slug')
                             ->required()
                             ->maxLength(255)
                             ->unique(ignoreRecord: true)
-                            ->helperText('Auto-generated from name'),
+                            ->helperText('Dibuat otomatis dari nama'),
 
                         Forms\Components\Select::make('type')
+                            ->label('Tipe Input')
                             ->options([
-                                'text' => 'Text',
-                                'number' => 'Number',
+                                'text' => 'Teks',
+                                'number' => 'Angka',
                                 'select' => 'Dropdown Select',
-                                'boolean' => 'Yes/No Toggle',
-                                'date' => 'Date',
-                                'textarea' => 'Text Area',
+                                'boolean' => 'Toggle Ya/Tidak',
+                                'date' => 'Tanggal',
+                                'textarea' => 'Area Teks',
                             ])
                             ->required()
                             ->default('text')
                             ->live()
-                            ->helperText('Choose the input type for this attribute'),
+                            ->helperText('Pilih tipe input untuk atribut ini'),
 
                         Forms\Components\TextInput::make('sort_order')
+                            ->label('Urutan')
                             ->numeric()
                             ->default(0)
-                            ->helperText('Lower numbers appear first'),
+                            ->helperText('Angka lebih kecil akan muncul lebih awal'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Dropdown Options')
+                Forms\Components\Section::make('Opsi Dropdown')
                     ->schema([
                         Forms\Components\TagsInput::make('options')
-                            ->placeholder('Add option and press Enter')
-                            ->helperText('Enter each option for the dropdown'),
+                            ->label('Opsi')
+                            ->placeholder('Tambah opsi dan tekan Enter')
+                            ->helperText('Masukkan setiap opsi untuk dropdown'),
                     ])
                     ->visible(fn (Forms\Get $get) => $get('type') === 'select'),
 
-                Forms\Components\Section::make('Settings')
+                Forms\Components\Section::make('Pengaturan')
                     ->schema([
                         Forms\Components\Toggle::make('is_required')
-                            ->label('Required Field')
-                            ->helperText('If enabled, this field must be filled when creating/editing a device'),
+                            ->label('Wajib Diisi')
+                            ->helperText('Jika diaktifkan, field ini harus diisi saat membuat/mengedit device'),
 
                         Forms\Components\Toggle::make('is_active')
-                            ->label('Active')
+                            ->label('Aktif')
                             ->default(true)
-                            ->helperText('Inactive attributes will not appear in device forms'),
+                            ->helperText('Atribut tidak aktif tidak akan muncul di form device'),
                     ])->columns(2),
             ]);
     }
@@ -107,15 +114,27 @@ class DeviceAttributeResource extends Resource implements HasShieldPermissions
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Nama')
                     ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('slug')
+                    ->label('Slug')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('type')
+                    ->label('Tipe')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'text' => 'Teks',
+                        'number' => 'Angka',
+                        'select' => 'Dropdown',
+                        'boolean' => 'Boolean',
+                        'date' => 'Tanggal',
+                        'textarea' => 'Area Teks',
+                        default => $state,
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'text' => 'gray',
                         'number' => 'info',
@@ -127,43 +146,45 @@ class DeviceAttributeResource extends Resource implements HasShieldPermissions
                     }),
 
                 Tables\Columns\IconColumn::make('is_required')
-                    ->label('Required')
+                    ->label('Wajib')
                     ->boolean(),
 
                 Tables\Columns\IconColumn::make('is_active')
-                    ->label('Active')
+                    ->label('Aktif')
                     ->boolean(),
 
                 Tables\Columns\TextColumn::make('sort_order')
-                    ->label('Order')
+                    ->label('Urutan')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('values_count')
-                    ->label('Used In')
+                    ->label('Digunakan Di')
                     ->counts('values')
-                    ->suffix(' devices'),
+                    ->suffix(' device'),
 
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
+                    ->label('Tipe')
                     ->options([
-                        'text' => 'Text',
-                        'number' => 'Number',
+                        'text' => 'Teks',
+                        'number' => 'Angka',
                         'select' => 'Dropdown Select',
-                        'boolean' => 'Yes/No Toggle',
-                        'date' => 'Date',
-                        'textarea' => 'Text Area',
+                        'boolean' => 'Toggle Ya/Tidak',
+                        'date' => 'Tanggal',
+                        'textarea' => 'Area Teks',
                     ]),
 
                 Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('Active Status'),
+                    ->label('Status Aktif'),
 
                 Tables\Filters\TernaryFilter::make('is_required')
-                    ->label('Required Status'),
+                    ->label('Status Wajib'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -183,30 +204,30 @@ class DeviceAttributeResource extends Resource implements HasShieldPermissions
     {
         return $infolist
             ->schema([
-                Section::make('Attribute Information')->schema([
-                    TextEntry::make('name'),
-                    TextEntry::make('slug'),
-                    TextEntry::make('type')->badge(),
-                    TextEntry::make('sort_order')->label('Sort Order'),
+                Section::make('Informasi Atribut')->schema([
+                    TextEntry::make('name')->label('Nama'),
+                    TextEntry::make('slug')->label('Slug'),
+                    TextEntry::make('type')->label('Tipe')->badge(),
+                    TextEntry::make('sort_order')->label('Urutan'),
                 ])->columns(2),
 
-                Section::make('Options')->schema([
+                Section::make('Opsi')->schema([
                     TextEntry::make('options')
                         ->badge()
                         ->separator(',')
-                        ->default('No options'),
+                        ->default('Tidak ada opsi'),
                 ])->visible(fn ($record) => $record->type === 'select'),
 
-                Section::make('Settings')->schema([
+                Section::make('Pengaturan')->schema([
                     TextEntry::make('is_required')
-                        ->label('Required')
+                        ->label('Wajib')
                         ->badge()
-                        ->formatStateUsing(fn ($state) => $state ? 'Yes' : 'No')
+                        ->formatStateUsing(fn ($state) => $state ? 'Ya' : 'Tidak')
                         ->color(fn ($state) => $state ? 'success' : 'gray'),
                     TextEntry::make('is_active')
-                        ->label('Active')
+                        ->label('Aktif')
                         ->badge()
-                        ->formatStateUsing(fn ($state) => $state ? 'Yes' : 'No')
+                        ->formatStateUsing(fn ($state) => $state ? 'Ya' : 'Tidak')
                         ->color(fn ($state) => $state ? 'success' : 'gray'),
                 ])->columns(2),
             ]);

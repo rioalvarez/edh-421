@@ -29,7 +29,11 @@ class ArticleResource extends Resource implements HasShieldPermissions
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationGroup = 'Content';
+    protected static ?string $navigationGroup = 'Konten';
+
+    protected static ?string $modelLabel = 'Artikel';
+
+    protected static ?string $pluralModelLabel = 'Artikel';
 
     protected static ?int $navigationSort = 1;
 
@@ -65,17 +69,20 @@ class ArticleResource extends Resource implements HasShieldPermissions
                     Forms\Components\Section::make()
                         ->schema([
                             Forms\Components\TextInput::make('title')
+                                ->label('Judul')
                                 ->required()
                                 ->maxLength(255)
                                 ->live(onBlur: true)
                                 ->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state))),
 
                             Forms\Components\TextInput::make('slug')
+                                ->label('Slug')
                                 ->required()
                                 ->maxLength(255)
                                 ->unique(ignoreRecord: true),
 
                             Forms\Components\RichEditor::make('content')
+                                ->label('Konten')
                                 ->required()
                                 ->columnSpanFull()
                                 ->fileAttachmentsDisk('public')
@@ -103,37 +110,42 @@ class ArticleResource extends Resource implements HasShieldPermissions
                     Forms\Components\Section::make()
                         ->schema([
                             Forms\Components\Select::make('status')
+                                ->label('Status')
                                 ->options([
-                                    'draft' => 'Draft',
-                                    'published' => 'Published',
-                                    'archived' => 'Archived',
+                                    'draft' => 'Draf',
+                                    'published' => 'Terbit',
+                                    'archived' => 'Arsip',
                                 ])
                                 ->default('draft')
                                 ->required()
                                 ->native(false),
 
                             Forms\Components\DateTimePicker::make('published_at')
-                                ->label('Publish Date')
+                                ->label('Tanggal Terbit')
                                 ->nullable(),
 
                             Forms\Components\Select::make('category_id')
+                                ->label('Kategori')
                                 ->relationship('category', 'name')
                                 ->searchable()
                                 ->preload()
                                 ->createOptionForm([
                                     Forms\Components\TextInput::make('name')
+                                        ->label('Nama')
                                         ->required()
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(fn (Forms\Set $set, ?string $state) => $set('slug', Str::slug($state))),
                                     Forms\Components\TextInput::make('slug')
+                                        ->label('Slug')
                                         ->required(),
                                     Forms\Components\Toggle::make('is_active')
+                                        ->label('Aktif')
                                         ->default(true),
                                 ])
                                 ->required(),
 
                             Forms\Components\Select::make('user_id')
-                                ->label('Author (User)')
+                                ->label('Penulis (User)')
                                 ->relationship('author', 'name')
                                 ->searchable()
                                 ->preload()
@@ -149,12 +161,13 @@ class ArticleResource extends Resource implements HasShieldPermissions
                                 ->nullable(),
 
                             Forms\Components\TextInput::make('author_name')
-                                ->label('Author Alias')
+                                ->label('Alias Penulis')
                                 ->required()
                                 ->maxLength(255)
-                                ->helperText('Displayed name if different from user.'),
+                                ->helperText('Nama yang ditampilkan jika berbeda dengan user.'),
 
                             SpatieMediaLibraryFileUpload::make('featured_image')
+                                ->label('Gambar Utama')
                                 ->collection('featured')
                                 ->image()
                                 ->imageEditor()
@@ -170,30 +183,38 @@ class ArticleResource extends Resource implements HasShieldPermissions
             ->columns([
                 SpatieMediaLibraryImageColumn::make('featured_image')
                     ->collection('featured')
-                    ->label('Image')
+                    ->label('Gambar')
                     ->circular()
                     ->defaultImageUrl(fn () => 'https://ui-avatars.com/api/?name=Article&background=random'),
 
                 Tables\Columns\TextColumn::make('title')
+                    ->label('Judul')
                     ->searchable()
                     ->sortable()
                     ->limit(40)
                     ->wrap(),
 
                 Tables\Columns\TextColumn::make('author_name')
-                    ->label('Author')
+                    ->label('Penulis')
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('category.name')
-                    ->label('Category')
+                    ->label('Kategori')
                     ->badge()
                     ->sortable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'published' => 'Terbit',
+                        'draft' => 'Draf',
+                        'archived' => 'Arsip',
+                        default => $state,
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'published' => 'success',
                         'draft' => 'warning',
@@ -202,29 +223,34 @@ class ArticleResource extends Resource implements HasShieldPermissions
                     }),
 
                 Tables\Columns\TextColumn::make('views')
+                    ->label('Dilihat')
                     ->numeric()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('published_at')
+                    ->label('Diterbitkan Pada')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
                     ->options([
-                        'draft' => 'Draft',
-                        'published' => 'Published',
-                        'archived' => 'Archived',
+                        'draft' => 'Draf',
+                        'published' => 'Terbit',
+                        'archived' => 'Arsip',
                     ]),
 
                 Tables\Filters\SelectFilter::make('category')
+                    ->label('Kategori')
                     ->relationship('category', 'name'),
             ])
             ->actions([
@@ -265,24 +291,32 @@ class ArticleResource extends Resource implements HasShieldPermissions
     {
         return $infolist
             ->schema([
-                Section::make('Article Information')->schema([
-                    TextEntry::make('title'),
-                    TextEntry::make('slug'),
-                    TextEntry::make('author_name')->label('Author'),
-                    TextEntry::make('category.name')->label('Category')->badge(),
-                    TextEntry::make('status')->badge(),
-                    TextEntry::make('views'),
-                    TextEntry::make('published_at')->dateTime(),
+                Section::make('Informasi Artikel')->schema([
+                    TextEntry::make('title')->label('Judul'),
+                    TextEntry::make('slug')->label('Slug'),
+                    TextEntry::make('author_name')->label('Penulis'),
+                    TextEntry::make('category.name')->label('Kategori')->badge(),
+                    TextEntry::make('status')->label('Status')->badge()
+                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                            'published' => 'Terbit',
+                            'draft' => 'Draf',
+                            'archived' => 'Arsip',
+                            default => $state,
+                        }),
+                    TextEntry::make('views')->label('Dilihat'),
+                    TextEntry::make('published_at')->label('Diterbitkan Pada')->dateTime(),
                 ])->columns(2),
 
-                Section::make('Content')->schema([
+                Section::make('Konten')->schema([
                     TextEntry::make('content')
+                        ->label('Konten')
                         ->html()
                         ->columnSpanFull(),
                 ]),
 
-                Section::make('Featured Image')->schema([
+                Section::make('Gambar Utama')->schema([
                     SpatieMediaLibraryImageEntry::make('featured_image')
+                        ->label('Gambar Utama')
                         ->collection('featured')
                         ->columnSpanFull(),
                 ])->collapsible(),
