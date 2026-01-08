@@ -36,15 +36,9 @@ class DeviceStatsWidget extends Widget
             ->where('status', 'active')
             ->count();
 
-        // Garansi akan habis dalam 30 hari
-        $warrantyExpiringSoon = Device::whereNotNull('warranty_expiry')
-            ->where('warranty_expiry', '>', now())
-            ->where('warranty_expiry', '<=', now()->addDays(30))
-            ->count();
-
-        // Garansi sudah habis
-        $warrantyExpired = Device::whereNotNull('warranty_expiry')
-            ->where('warranty_expiry', '<', now())
+        // Perangkat tanpa IP Address
+        $noIpAddress = Device::whereNull('ip_address')
+            ->where('status', '!=', 'retired')
             ->count();
 
         return [
@@ -55,7 +49,7 @@ class DeviceStatsWidget extends Widget
                 ->chart([7, 5, 8, 6, 9, $totalDevices]),
 
             Stat::make('Perangkat Aktif', $activeDevices)
-                ->description("{$unassignedDevices} belum ditugaskan")
+                ->description("{$unassignedDevices} belum di-assign")
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success')
                 ->chart([4, 5, 6, 5, 7, $activeDevices]),
@@ -72,11 +66,11 @@ class DeviceStatsWidget extends Widget
                 ->color($poorConditionDevices > 0 ? 'danger' : 'success')
                 ->chart([1, 2, 1, 3, 2, $poorConditionDevices]),
 
-            Stat::make('Garansi Habis', "{$warrantyExpired}")
-                ->description("{$warrantyExpiringSoon} akan habis 30 hari")
-                ->descriptionIcon('heroicon-m-shield-exclamation')
-                ->color($warrantyExpired > 5 ? 'danger' : ($warrantyExpired > 0 ? 'warning' : 'success'))
-                ->chart([3, 4, 5, 4, 6, $warrantyExpired]),
+            Stat::make('Belum Ada IP', $noIpAddress)
+                ->description('Perangkat tanpa IP Address')
+                ->descriptionIcon('heroicon-m-signal-slash')
+                ->color($noIpAddress > 0 ? 'danger' : 'success')
+                ->chart([3, 4, 5, 4, 6, $noIpAddress]),
 
             Stat::make('Non-Aktif/Retired', $retiredDevices)
                 ->description('Perangkat tidak digunakan')

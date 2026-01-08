@@ -125,7 +125,13 @@ class TicketResource extends Resource implements HasShieldPermissions
                             ->nullable()
                             ->reactive()
                             ->helperText('Pilih perangkat yang bermasalah (opsional)')
-                            ->disabled(fn ($record) => $record !== null && !auth()->user()->hasRole('super_admin')),
+                            ->disabled(fn ($record, Forms\Get $get) => ($record !== null && !auth()->user()->hasRole('super_admin')) || $get('is_external_device')),
+
+                        Forms\Components\Toggle::make('is_external_device')
+                            ->label('Perangkat Luar/Lainnya')
+                            ->helperText('Centang jika perangkat yang bermasalah adalah printer, mesin fotokopi, atau perangkat lain di luar PC/Laptop Anda.')
+                            ->reactive()
+                            ->afterStateUpdated(fn (Forms\Set $set, $state) => $state ? $set('device_id', null) : null),
 
                         Forms\Components\Select::make('category')
                             ->label('Kategori')
@@ -188,6 +194,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                             ->imageEditor()
                             ->maxSize(5120) // 5MB
                             ->maxFiles(5)
+                            ->disk('public') // Explicitly set disk to public
                             ->directory('ticket-attachments')
                             ->visibility('public')
                             ->helperText('Upload foto kerusakan atau file pendukung (maks. 5 file, @5MB)')
@@ -557,21 +564,30 @@ class TicketResource extends Resource implements HasShieldPermissions
 
                 Section::make('Perangkat Terkait')
                     ->schema([
+                        TextEntry::make('is_external_device')
+                            ->label('Jenis Perangkat')
+                            ->badge()
+                            ->formatStateUsing(fn ($state) => $state ? 'Perangkat Luar/Lainnya' : 'Perangkat Terdaftar')
+                            ->color(fn ($state) => $state ? 'warning' : 'success'),
                         TextEntry::make('device.display_name')
                             ->label('Perangkat')
-                            ->default('Tidak ada'),
+                            ->default('Tidak ada')
+                            ->visible(fn ($record) => !$record->is_external_device),
                         TextEntry::make('device.type')
                             ->label('Tipe')
                             ->badge()
-                            ->default('-'),
+                            ->default('-')
+                            ->visible(fn ($record) => !$record->is_external_device),
                         TextEntry::make('device.serial_number')
                             ->label('Serial Number')
-                            ->default('-'),
+                            ->default('-')
+                            ->visible(fn ($record) => !$record->is_external_device),
                         TextEntry::make('device.ip_address')
                             ->label('IP Address')
-                            ->default('-'),
+                            ->default('-')
+                            ->visible(fn ($record) => !$record->is_external_device),
                     ])->columns(4)
-                    ->visible(fn ($record) => $record->device_id !== null),
+                    ->visible(fn ($record) => $record->device_id !== null || $record->is_external_device),
 
                 Section::make('Penanganan')
                     ->schema([

@@ -26,6 +26,11 @@ class Device extends Model
         return $this->hasMany(DeviceAttributeValue::class);
     }
 
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
     public function getDisplayNameAttribute(): string
     {
         if ($this->hostname) {

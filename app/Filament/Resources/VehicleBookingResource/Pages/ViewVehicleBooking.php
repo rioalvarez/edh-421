@@ -16,23 +16,6 @@ class ViewVehicleBooking extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('start_use')
-                ->label('Mulai Penggunaan')
-                ->icon('heroicon-o-play')
-                ->color('warning')
-                ->requiresConfirmation()
-                ->modalHeading('Mulai Penggunaan Kendaraan')
-                ->modalDescription('Apakah Anda yakin ingin memulai penggunaan kendaraan ini?')
-                ->action(function () {
-                    $this->record->markAsInUse();
-                    Notification::make()
-                        ->title('Penggunaan dimulai')
-                        ->success()
-                        ->send();
-                    $this->refreshFormData(['status']);
-                })
-                ->visible(fn () => $this->record->status === 'approved' && $this->record->start_date <= today()),
-
             Actions\Action::make('return')
                 ->label('Kembalikan Kendaraan')
                 ->icon('heroicon-o-arrow-uturn-left')

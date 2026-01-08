@@ -309,7 +309,7 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                                 'cancelled' => 'Dibatalkan',
                             ])
                             ->required()
-                            ->default('approved'),
+                            ->default('in_use'),
                     ])
                     ->visible(fn () => auth()->user()->hasRole('super_admin'))
                     ->collapsed(),
@@ -433,22 +433,6 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                     }),
             ])
             ->actions([
-                Tables\Actions\Action::make('start_use')
-                    ->label('Mulai')
-                    ->icon('heroicon-o-play')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->modalHeading('Mulai Penggunaan Kendaraan')
-                    ->modalDescription('Apakah Anda yakin ingin memulai penggunaan kendaraan ini?')
-                    ->action(function (VehicleBooking $record) {
-                        $record->markAsInUse();
-                        Notification::make()
-                            ->title('Penggunaan dimulai')
-                            ->success()
-                            ->send();
-                    })
-                    ->visible(fn (VehicleBooking $record) => $record->status === 'approved' && $record->start_date <= today()),
-
                 Tables\Actions\Action::make('return')
                     ->label('Kembalikan')
                     ->icon('heroicon-o-arrow-uturn-left')

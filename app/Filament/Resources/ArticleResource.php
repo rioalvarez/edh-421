@@ -254,7 +254,9 @@ class ArticleResource extends Resource implements HasShieldPermissions
                     ->relationship('category', 'name'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(fn (Article $record): string => route('article.show', ['slug' => $record->slug]))
+                    ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

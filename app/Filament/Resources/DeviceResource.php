@@ -249,7 +249,7 @@ class DeviceResource extends Resource implements HasShieldPermissions
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipe')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn ($state) => match ($state) {
                         'laptop' => 'info',
                         'desktop' => 'success',
                         'all-in-one' => 'warning',
@@ -264,6 +264,12 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     ->default('Belum Ada')
                     ->badge()
                     ->color(fn ($state) => $state === 'Belum Ada' ? 'gray' : 'success'),
+
+                Tables\Columns\TextColumn::make('location')
+                    ->label('Lokasi')
+                    ->searchable()
+                    ->sortable()
+                    ->default('-'),
 
                 Tables\Columns\TextColumn::make('ip_address')
                     ->label('IP Address')
@@ -297,7 +303,7 @@ class DeviceResource extends Resource implements HasShieldPermissions
                 Tables\Columns\TextColumn::make('condition')
                     ->label('Kondisi')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state) => match ($state) {
                         'excellent' => 'Sangat Baik',
                         'good' => 'Baik',
                         'fair' => 'Cukup',
@@ -305,7 +311,7 @@ class DeviceResource extends Resource implements HasShieldPermissions
                         'broken' => 'Rusak',
                         default => $state,
                     })
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn ($state) => match ($state) {
                         'excellent' => 'success',
                         'good' => 'info',
                         'fair' => 'warning',
@@ -317,14 +323,14 @@ class DeviceResource extends Resource implements HasShieldPermissions
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn ($state) => match ($state) {
                         'active' => 'Aktif',
                         'inactive' => 'Nonaktif',
                         'maintenance' => 'Perbaikan',
                         'retired' => 'Pensiun',
                         default => $state,
                     })
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn ($state) => match ($state) {
                         'active' => 'success',
                         'inactive' => 'gray',
                         'maintenance' => 'warning',
@@ -380,6 +386,10 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->preload(),
 
+                Tables\Filters\SelectFilter::make('location')
+                    ->label('Lokasi')
+                    ->options(fn () => Device::query()->pluck('location', 'location')->unique()->filter()->sort()),
+
                 Tables\Filters\TernaryFilter::make('assigned')
                     ->label('Status Penggunaan')
                     ->placeholder('Semua')
@@ -391,7 +401,8 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     ),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(fn (Device $record): string => self::getUrl('view', ['record' => $record])),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -418,7 +429,16 @@ class DeviceResource extends Resource implements HasShieldPermissions
         return $infolist
             ->schema([
                 Section::make('Informasi Device')->schema([
-                    TextEntry::make('type')->label('Tipe')->badge(),
+                    TextEntry::make('type')
+                        ->label('Tipe')
+                        ->badge()
+                        ->color(fn ($state) => match ($state) {
+                            'laptop' => 'info',
+                            'desktop' => 'success',
+                            'all-in-one' => 'warning',
+                            'workstation' => 'primary',
+                            default => 'gray',
+                        }),
                     TextEntry::make('user.name')->label('Pengguna')->default('Belum Ada'),
                     TextEntry::make('hostname')->default('-'),
                     TextEntry::make('ip_address')->label('IP Address')->default('-'),
@@ -443,7 +463,7 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     TextEntry::make('condition')
                         ->label('Kondisi')
                         ->badge()
-                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                        ->formatStateUsing(fn ($state) => match ($state) {
                             'excellent' => 'Sangat Baik',
                             'good' => 'Baik',
                             'fair' => 'Cukup',
@@ -454,15 +474,15 @@ class DeviceResource extends Resource implements HasShieldPermissions
                     TextEntry::make('status')
                         ->label('Status')
                         ->badge()
-                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                        ->formatStateUsing(fn ($state) => match ($state) {
                             'active' => 'Aktif',
                             'inactive' => 'Nonaktif',
                             'maintenance' => 'Perbaikan',
                             'retired' => 'Pensiun',
                             default => $state,
                         }),
-                    TextEntry::make('purchase_date')->label('Tanggal Pembelian')->date()->default('-'),
-                    TextEntry::make('warranty_expiry')->label('Habis Masa Garansi')->date()->default('-'),
+                    TextEntry::make('purchase_date')->label('Tanggal Pembelian')->date(),
+                    TextEntry::make('warranty_expiry')->label('Habis Masa Garansi')->date(),
                 ])->columns(2),
 
                 Section::make('Catatan')->schema([
@@ -478,6 +498,7 @@ class DeviceResource extends Resource implements HasShieldPermissions
     {
         return [
             RelationManagers\AttributeValuesRelationManager::class,
+            RelationManagers\TicketsRelationManager::class,
         ];
     }
 
