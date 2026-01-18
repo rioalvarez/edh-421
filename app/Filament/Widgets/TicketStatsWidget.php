@@ -5,12 +5,13 @@ namespace App\Filament\Widgets;
 use App\Models\Ticket;
 use Filament\Widgets\Widget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Cache;
 
 class TicketStatsWidget extends Widget
 {
     protected static string $view = 'filament.widgets.ticket-stats-widget';
 
-    protected static ?string $pollingInterval = '30s';
+    protected static ?string $pollingInterval = '60s';
 
     protected static ?int $sort = 5;
 
@@ -23,78 +24,57 @@ class TicketStatsWidget extends Widget
 
     public function getStats(): array
     {
-        // Tiket terbuka (open, in_progress, waiting_for_user)
-        $openTickets = Ticket::whereIn('status', ['open', 'in_progress', 'waiting_for_user'])->count();
-
-        // Tiket yang baru masuk (status open)
-        $newTickets = Ticket::where('status', 'open')->count();
-
-        // Tiket dalam proses
-        $inProgressTickets = Ticket::where('status', 'in_progress')->count();
-
-        // Tiket menunggu user
-        $waitingUserTickets = Ticket::where('status', 'waiting_for_user')->count();
-
-        // Tiket belum ditugaskan
-        $unassignedTickets = Ticket::whereIn('status', ['open', 'in_progress'])
-            ->whereNull('assigned_to')
-            ->count();
-
-        // Tiket prioritas tinggi/kritis yang masih terbuka
-        $highPriorityOpen = Ticket::whereIn('status', ['open', 'in_progress', 'waiting_for_user'])
-            ->whereIn('priority', ['high', 'critical'])
-            ->count();
-
-        // Tiket selesai bulan ini
-        $resolvedThisMonth = Ticket::whereIn('status', ['resolved', 'closed'])
-            ->whereMonth('resolved_at', now()->month)
-            ->whereYear('resolved_at', now()->year)
-            ->count();
-
-        // Tiket baru hari ini
-        $todayTickets = Ticket::whereDate('created_at', today())->count();
-
-        // Total tiket bulan ini
-        $monthlyTickets = Ticket::whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->count();
+        $stats = Cache::remember('ticket_stats_widget', now()->addMinute(), function () {
+            $baseQuery = Ticket::query();
+            
+            return [
+                'newTickets' => (clone $baseQuery)->where('status', 'open')->count(),
+                'inProgressTickets' => (clone $baseQuery)->where('status', 'in_progress')->count(),
+                'waitingUserTickets' => (clone $baseQuery)->where('status', 'waiting_for_user')->count(),
+                'unassignedTickets' => (clone $baseQuery)->whereIn('status', ['open', 'in_progress'])->whereNull('assigned_to')->count(),
+                'highPriorityOpen' => (clone $baseQuery)->whereIn('status', ['open', 'in_progress', 'waiting_for_user'])->whereIn('priority', ['high', 'critical'])->count(),
+                'resolvedThisMonth' => (clone $baseQuery)->whereIn('status', ['resolved', 'closed'])->whereMonth('resolved_at', now()->month)->whereYear('resolved_at', now()->year)->count(),
+                'todayTickets' => (clone $baseQuery)->whereDate('created_at', today())->count(),
+                'monthlyTickets' => (clone $baseQuery)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
+            ];
+        });
 
         return [
-            Stat::make('Tiket Baru', $newTickets)
-                ->description("{$todayTickets} tiket masuk hari ini")
+            Stat::make('Tiket Baru', $stats['newTickets'])
+                ->description("{$stats['todayTickets']} tiket masuk hari ini")
                 ->descriptionIcon('heroicon-m-inbox-arrow-down')
-                ->color($newTickets > 5 ? 'danger' : ($newTickets > 0 ? 'warning' : 'success'))
-                ->chart([3, 4, 2, 5, 3, $newTickets]),
+                ->color($stats['newTickets'] > 5 ? 'danger' : ($stats['newTickets'] > 0 ? 'warning' : 'success'))
+                ->chart([3, 4, 2, 5, 3, $stats['newTickets']]),
 
-            Stat::make('Dalam Proses', $inProgressTickets)
+            Stat::make('Dalam Proses', $stats['inProgressTickets'])
                 ->description('Sedang ditangani')
                 ->descriptionIcon('heroicon-m-arrow-path')
-                ->color($inProgressTickets > 0 ? 'info' : 'gray')
-                ->chart([2, 3, 4, 3, 5, $inProgressTickets]),
+                ->color($stats['inProgressTickets'] > 0 ? 'info' : 'gray')
+                ->chart([2, 3, 4, 3, 5, $stats['inProgressTickets']]),
 
-            Stat::make('Menunggu User', $waitingUserTickets)
+            Stat::make('Menunggu User', $stats['waitingUserTickets'])
                 ->description('Perlu respons user')
                 ->descriptionIcon('heroicon-m-clock')
-                ->color($waitingUserTickets > 0 ? 'warning' : 'success')
-                ->chart([1, 2, 1, 3, 2, $waitingUserTickets]),
+                ->color($stats['waitingUserTickets'] > 0 ? 'warning' : 'success')
+                ->chart([1, 2, 1, 3, 2, $stats['waitingUserTickets']]),
 
-            Stat::make('Belum Ditugaskan', $unassignedTickets)
+            Stat::make('Belum Ditugaskan', $stats['unassignedTickets'])
                 ->description('Perlu segera ditugaskan')
                 ->descriptionIcon('heroicon-m-user-plus')
-                ->color($unassignedTickets > 0 ? 'danger' : 'success')
-                ->chart([1, 0, 2, 1, 1, $unassignedTickets]),
+                ->color($stats['unassignedTickets'] > 0 ? 'danger' : 'success')
+                ->chart([1, 0, 2, 1, 1, $stats['unassignedTickets']]),
 
-            Stat::make('Prioritas Tinggi', $highPriorityOpen)
+            Stat::make('Prioritas Tinggi', $stats['highPriorityOpen'])
                 ->description('High & Critical terbuka')
                 ->descriptionIcon('heroicon-m-fire')
-                ->color($highPriorityOpen > 0 ? 'danger' : 'success')
-                ->chart([2, 1, 3, 2, 1, $highPriorityOpen]),
+                ->color($stats['highPriorityOpen'] > 0 ? 'danger' : 'success')
+                ->chart([2, 1, 3, 2, 1, $stats['highPriorityOpen']]),
 
-            Stat::make('Selesai Bulan Ini', $resolvedThisMonth)
-                ->description("{$monthlyTickets} total tiket " . now()->translatedFormat('F'))
+            Stat::make('Selesai Bulan Ini', $stats['resolvedThisMonth'])
+                ->description("{$stats['monthlyTickets']} total tiket " . now()->translatedFormat('F'))
                 ->descriptionIcon('heroicon-m-check-badge')
                 ->color('success')
-                ->chart([4, 6, 5, 7, 8, $resolvedThisMonth]),
+                ->chart([4, 6, 5, 7, 8, $stats['resolvedThisMonth']]),
         ];
     }
 }

@@ -36,7 +36,7 @@ class RecentTicketsWidget extends BaseWidget
     {
         return $table
             ->query(
-                Ticket::query()
+                Ticket::query()->with(['user', 'assignedTo'])
                     ->whereIn('status', ['open', 'in_progress', 'waiting_for_user'])
                     ->orderByRaw("FIELD(priority, 'critical', 'high', 'medium', 'low')")
                     ->orderBy('created_at', 'desc')

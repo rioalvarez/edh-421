@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 #[ObservedBy([TicketObserver::class])]
 class Ticket extends Model
@@ -29,15 +30,20 @@ class Ticket extends Model
 
     public static function generateTicketNumber(): string
     {
-        $prefix = 'TKT';
-        $date = now()->format('Ymd');
-        $lastTicket = self::whereDate('created_at', today())
-            ->orderBy('id', 'desc')
-            ->first();
+        return DB::transaction(function () {
+            $prefix = 'TKT';
+            $date = now()->format('Ymd');
 
-        $sequence = $lastTicket ? (int) substr($lastTicket->ticket_number, -4) + 1 : 1;
+            // Use lockForUpdate to prevent race conditions
+            $lastTicket = self::whereDate('created_at', today())
+                ->lockForUpdate()
+                ->orderBy('id', 'desc')
+                ->first();
 
-        return sprintf('%s-%s-%04d', $prefix, $date, $sequence);
+            $sequence = $lastTicket ? (int) substr($lastTicket->ticket_number, -4) + 1 : 1;
+
+            return sprintf('%s-%s-%04d', $prefix, $date, $sequence);
+        });
     }
 
     // Relationships

@@ -17,6 +17,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 
 class TicketResource extends Resource implements HasShieldPermissions
 {
@@ -37,7 +38,8 @@ class TicketResource extends Resource implements HasShieldPermissions
     // Scope: User biasa hanya lihat tiket sendiri, admin lihat semua
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()
+            ->with(['user', 'assignedTo', 'device']); // Eager loading untuk performa
 
         if (!auth()->user()->hasRole('super_admin')) {
             $query->where('user_id', auth()->id());
@@ -62,26 +64,38 @@ class TicketResource extends Resource implements HasShieldPermissions
 
     public static function getNavigationBadge(): ?string
     {
-        $query = static::getModel()::whereIn('status', ['open', 'in_progress']);
+        $userId = auth()->id();
+        $isAdmin = auth()->user()->hasRole('super_admin');
+        $cacheKey = "ticket_badge_{$userId}_" . ($isAdmin ? 'admin' : 'user');
 
-        // User biasa hanya hitung tiket sendiri
-        if (!auth()->user()->hasRole('super_admin')) {
-            $query->where('user_id', auth()->id());
-        }
+        return Cache::remember($cacheKey, now()->addMinutes(2), function () use ($isAdmin, $userId) {
+            $query = static::getModel()::whereIn('status', ['open', 'in_progress']);
 
-        return $query->count() ?: null;
+            if (!$isAdmin) {
+                $query->where('user_id', $userId);
+            }
+
+            $count = $query->count();
+            return $count ?: null;
+        });
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        $query = static::getModel()::where('status', 'open');
+        $userId = auth()->id();
+        $isAdmin = auth()->user()->hasRole('super_admin');
+        $cacheKey = "ticket_badge_color_{$userId}_" . ($isAdmin ? 'admin' : 'user');
 
-        if (!auth()->user()->hasRole('super_admin')) {
-            $query->where('user_id', auth()->id());
-        }
+        return Cache::remember($cacheKey, now()->addMinutes(2), function () use ($isAdmin, $userId) {
+            $query = static::getModel()::where('status', 'open');
 
-        $count = $query->count();
-        return $count > 5 ? 'danger' : ($count > 0 ? 'warning' : 'success');
+            if (!$isAdmin) {
+                $query->where('user_id', $userId);
+            }
+
+            $count = $query->count();
+            return $count > 5 ? 'danger' : ($count > 0 ? 'warning' : 'success');
+        });
     }
 
     public static function form(Form $form): Form
@@ -597,11 +611,11 @@ class TicketResource extends Resource implements HasShieldPermissions
                         TextEntry::make('resolved_at')
                             ->label('Diselesaikan')
                             ->dateTime('d M Y H:i')
-                            ->default('-'),
+                            ->placeholder('-'),
                         TextEntry::make('closed_at')
                             ->label('Ditutup')
                             ->dateTime('d M Y H:i')
-                            ->default('-'),
+                            ->placeholder('-'),
                         TextEntry::make('resolution_notes')
                             ->label('Catatan Penyelesaian')
                             ->default('Belum ada')

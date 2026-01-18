@@ -22,6 +22,7 @@ use Filament\Tables\Actions\ImportAction;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Builder;
 
 class ArticleResource extends Resource implements HasShieldPermissions
 {
@@ -36,6 +37,12 @@ class ArticleResource extends Resource implements HasShieldPermissions
     protected static ?string $pluralModelLabel = 'Artikel';
 
     protected static ?int $navigationSort = 1;
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['category']); // Eager loading untuk performa
+    }
 
     public static function getPermissionPrefixes(): array
     {

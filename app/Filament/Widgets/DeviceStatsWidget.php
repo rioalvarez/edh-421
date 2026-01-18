@@ -5,12 +5,13 @@ namespace App\Filament\Widgets;
 use App\Models\Device;
 use Filament\Widgets\Widget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Cache;
 
 class DeviceStatsWidget extends Widget
 {
     protected static string $view = 'filament.widgets.device-stats-widget';
 
-    protected static ?string $pollingInterval = '60s';
+    protected static ?string $pollingInterval = '120s';
 
     protected static ?int $sort = 4;
 
@@ -23,60 +24,56 @@ class DeviceStatsWidget extends Widget
 
     public function getStats(): array
     {
-        $totalDevices = Device::count();
-        $activeDevices = Device::where('status', 'active')->count();
-        $maintenanceDevices = Device::where('status', 'maintenance')->count();
-        $retiredDevices = Device::where('status', 'retired')->count();
-
-        // Perangkat dengan kondisi buruk
-        $poorConditionDevices = Device::whereIn('condition', ['poor', 'broken'])->count();
-
-        // Perangkat yang belum ditugaskan
-        $unassignedDevices = Device::whereNull('user_id')
-            ->where('status', 'active')
-            ->count();
-
-        // Perangkat tanpa IP Address
-        $noIpAddress = Device::whereNull('ip_address')
-            ->where('status', '!=', 'retired')
-            ->count();
+        $stats = Cache::remember('device_stats_widget', now()->addMinutes(2), function () {
+            $baseQuery = Device::query();
+            
+            return [
+                'totalDevices' => (clone $baseQuery)->count(),
+                'activeDevices' => (clone $baseQuery)->where('status', 'active')->count(),
+                'maintenanceDevices' => (clone $baseQuery)->where('status', 'maintenance')->count(),
+                'retiredDevices' => (clone $baseQuery)->where('status', 'retired')->count(),
+                'poorConditionDevices' => (clone $baseQuery)->whereIn('condition', ['poor', 'broken'])->count(),
+                'unassignedDevices' => (clone $baseQuery)->whereNull('user_id')->where('status', 'active')->count(),
+                'noIpAddress' => (clone $baseQuery)->whereNull('ip_address')->where('status', '!=', 'retired')->count(),
+            ];
+        });
 
         return [
-            Stat::make('Total Perangkat', $totalDevices)
+            Stat::make('Total Perangkat', $stats['totalDevices'])
                 ->description('Semua perangkat komputer')
                 ->descriptionIcon('heroicon-m-computer-desktop')
                 ->color('primary')
-                ->chart([7, 5, 8, 6, 9, $totalDevices]),
+                ->chart([7, 5, 8, 6, 9, $stats['totalDevices']]),
 
-            Stat::make('Perangkat Aktif', $activeDevices)
-                ->description("{$unassignedDevices} belum di-assign")
+            Stat::make('Perangkat Aktif', $stats['activeDevices'])
+                ->description("{$stats['unassignedDevices']} belum di-assign")
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success')
-                ->chart([4, 5, 6, 5, 7, $activeDevices]),
+                ->chart([4, 5, 6, 5, 7, $stats['activeDevices']]),
 
-            Stat::make('Dalam Perbaikan', $maintenanceDevices)
+            Stat::make('Dalam Perbaikan', $stats['maintenanceDevices'])
                 ->description('Sedang maintenance')
                 ->descriptionIcon('heroicon-m-wrench-screwdriver')
-                ->color($maintenanceDevices > 0 ? 'warning' : 'success')
-                ->chart([2, 3, 2, 4, 3, $maintenanceDevices]),
+                ->color($stats['maintenanceDevices'] > 0 ? 'warning' : 'success')
+                ->chart([2, 3, 2, 4, 3, $stats['maintenanceDevices']]),
 
-            Stat::make('Kondisi Buruk', $poorConditionDevices)
+            Stat::make('Kondisi Buruk', $stats['poorConditionDevices'])
                 ->description('Perlu perhatian')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color($poorConditionDevices > 0 ? 'danger' : 'success')
-                ->chart([1, 2, 1, 3, 2, $poorConditionDevices]),
+                ->color($stats['poorConditionDevices'] > 0 ? 'danger' : 'success')
+                ->chart([1, 2, 1, 3, 2, $stats['poorConditionDevices']]),
 
-            Stat::make('Belum Ada IP', $noIpAddress)
+            Stat::make('Belum Ada IP', $stats['noIpAddress'])
                 ->description('Perangkat tanpa IP Address')
                 ->descriptionIcon('heroicon-m-signal-slash')
-                ->color($noIpAddress > 0 ? 'danger' : 'success')
-                ->chart([3, 4, 5, 4, 6, $noIpAddress]),
+                ->color($stats['noIpAddress'] > 0 ? 'danger' : 'success')
+                ->chart([3, 4, 5, 4, 6, $stats['noIpAddress']]),
 
-            Stat::make('Non-Aktif/Retired', $retiredDevices)
+            Stat::make('Non-Aktif/Retired', $stats['retiredDevices'])
                 ->description('Perangkat tidak digunakan')
                 ->descriptionIcon('heroicon-m-archive-box')
                 ->color('gray')
-                ->chart([1, 1, 2, 1, 1, $retiredDevices]),
+                ->chart([1, 1, 2, 1, 1, $stats['retiredDevices']]),
         ];
     }
 }

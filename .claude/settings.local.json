@@ -16,7 +16,13 @@
       "Bash(php:*)",
       "Bash(php -l:*)",
       "Bash(del fix_nip.php)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(composer run:*)",
+      "Bash(where:*)",
+      "Bash(npx concurrently:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(composer dump-autoload:*)"
     ]
   }
 }

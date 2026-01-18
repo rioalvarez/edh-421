@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Device extends Model
@@ -68,21 +69,35 @@ class Device extends Model
 
     public function getDynamicAttribute(string $slug): ?string
     {
-        $attribute = DeviceAttribute::where('slug', $slug)->first();
+        // Cache attribute lookup
+        $attribute = Cache::remember(
+            "device_attribute_{$slug}",
+            now()->addHours(24),
+            fn () => DeviceAttribute::where('slug', $slug)->first()
+        );
+
         if (!$attribute) {
             return null;
         }
 
-        $value = $this->attributeValues()
-            ->where('device_attribute_id', $attribute->id)
-            ->first();
-
-        return $value?->value;
+        // Cache the value for this device
+        return Cache::remember(
+            "device_{$this->id}_attr_{$attribute->id}",
+            now()->addMinutes(30),
+            fn () => $this->attributeValues()
+                ->where('device_attribute_id', $attribute->id)
+                ->first()?->value
+        );
     }
 
     public function setDynamicAttribute(string $slug, ?string $value): void
     {
-        $attribute = DeviceAttribute::where('slug', $slug)->first();
+        $attribute = Cache::remember(
+            "device_attribute_{$slug}",
+            now()->addHours(24),
+            fn () => DeviceAttribute::where('slug', $slug)->first()
+        );
+
         if (!$attribute) {
             return;
         }
@@ -91,5 +106,8 @@ class Device extends Model
             ['device_attribute_id' => $attribute->id],
             ['value' => $value]
         );
+
+        // Clear the cache for this attribute value
+        Cache::forget("device_{$this->id}_attr_{$attribute->id}");
     }
 }

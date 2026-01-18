@@ -16,6 +16,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 
 class VehicleBookingResource extends Resource implements HasShieldPermissions
 {
@@ -35,7 +36,8 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()
+            ->with(['user', 'vehicle']); // Eager loading untuk performa
 
         if (!auth()->user()->hasRole('super_admin')) {
             $query->where('user_id', auth()->id());
@@ -59,25 +61,38 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
 
     public static function getNavigationBadge(): ?string
     {
-        $query = static::getModel()::whereIn('status', ['approved', 'in_use']);
+        $userId = auth()->id();
+        $isAdmin = auth()->user()->hasRole('super_admin');
+        $cacheKey = "booking_badge_{$userId}_" . ($isAdmin ? 'admin' : 'user');
 
-        if (!auth()->user()->hasRole('super_admin')) {
-            $query->where('user_id', auth()->id());
-        }
+        return Cache::remember($cacheKey, now()->addMinutes(2), function () use ($isAdmin, $userId) {
+            $query = static::getModel()::whereIn('status', ['approved', 'in_use']);
 
-        return $query->count() ?: null;
+            if (!$isAdmin) {
+                $query->where('user_id', $userId);
+            }
+
+            $count = $query->count();
+            return $count > 0 ? (string) $count : null;
+        });
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        $query = static::getModel()::query()->needsReturn();
+        $userId = auth()->id();
+        $isAdmin = auth()->user()->hasRole('super_admin');
+        $cacheKey = "booking_badge_color_{$userId}_" . ($isAdmin ? 'admin' : 'user');
 
-        if (!auth()->user()->hasRole('super_admin')) {
-            $query->where('user_id', auth()->id());
-        }
+        return Cache::remember($cacheKey, now()->addMinutes(2), function () use ($isAdmin, $userId) {
+            $query = static::getModel()::query()->needsReturn();
 
-        $count = $query->count();
-        return $count > 0 ? 'danger' : 'success';
+            if (!$isAdmin) {
+                $query->where('user_id', $userId);
+            }
+
+            $count = $query->count();
+            return $count > 0 ? 'danger' : 'success';
+        });
     }
 
     public static function form(Form $form): Form
@@ -571,7 +586,7 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                         TextEntry::make('departure_time')
                             ->label('Jam Keberangkatan')
                             ->time('H:i')
-                            ->default('-'),
+                            ->placeholder('-'),
                         TextEntry::make('duration_days')
                             ->label('Durasi')
                             ->suffix(' hari'),
@@ -641,7 +656,7 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                         TextEntry::make('returned_at')
                             ->label('Waktu Pengembalian')
                             ->dateTime('d M Y H:i')
-                            ->default('-'),
+                            ->placeholder('-'),
                         TextEntry::make('return_condition')
                             ->label('Kondisi Kendaraan')
                             ->default('-'),

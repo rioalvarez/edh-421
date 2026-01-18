@@ -376,9 +376,9 @@ class VehicleResource extends Resource implements HasShieldPermissions
 
                 Section::make('Tanggal Penting')
                     ->schema([
-                        TextEntry::make('last_service_date')->label('Servis Terakhir')->date('d M Y')->default('-'),
-                        TextEntry::make('tax_expiry_date')->label('Pajak Habis')->date('d M Y')->default('-'),
-                        TextEntry::make('inspection_expiry_date')->label('KIR Habis')->date('d M Y')->default('-'),
+                        TextEntry::make('last_service_date')->label('Servis Terakhir')->date('d M Y')->placeholder('-'),
+                        TextEntry::make('tax_expiry_date')->label('Pajak Habis')->date('d M Y')->placeholder('-'),
+                        TextEntry::make('inspection_expiry_date')->label('KIR Habis')->date('d M Y')->placeholder('-'),
                     ])->columns(3),
 
                 Section::make('Catatan')

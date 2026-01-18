@@ -19,6 +19,7 @@ use Filament\Tables;
 use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Actions\ImportAction;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class DeviceResource extends Resource implements HasShieldPermissions
 {
@@ -46,6 +47,12 @@ class DeviceResource extends Resource implements HasShieldPermissions
             'delete',
             'delete_any',
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['user']); // Eager loading untuk performa
     }
 
     public static function form(Form $form): Form

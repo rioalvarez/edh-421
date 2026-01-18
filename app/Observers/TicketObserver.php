@@ -6,14 +6,41 @@ use App\Models\Ticket;
 use App\Models\User;
 use Filament\Notifications\Notification;
 use Filament\Notifications\Actions\Action;
+use Illuminate\Support\Facades\Cache;
 
 class TicketObserver
 {
+    /**
+     * Clear navigation badge cache for all affected users.
+     */
+    protected function clearBadgeCache(Ticket $ticket): void
+    {
+        // Clear cache for the ticket owner
+        Cache::forget("ticket_badge_{$ticket->user_id}_user");
+        Cache::forget("ticket_badge_color_{$ticket->user_id}_user");
+
+        // Clear cache for assigned admin if exists
+        if ($ticket->assigned_to) {
+            Cache::forget("ticket_badge_{$ticket->assigned_to}_admin");
+            Cache::forget("ticket_badge_color_{$ticket->assigned_to}_admin");
+        }
+
+        // Clear cache for all admins (they see all tickets)
+        $admins = User::role('super_admin')->pluck('id');
+        foreach ($admins as $adminId) {
+            Cache::forget("ticket_badge_{$adminId}_admin");
+            Cache::forget("ticket_badge_color_{$adminId}_admin");
+        }
+    }
+
     /**
      * Handle the Ticket "created" event.
      */
     public function created(Ticket $ticket): void
     {
+        // Clear badge cache when new ticket is created
+        $this->clearBadgeCache($ticket);
+
         // Notifikasi ke semua admin bahwa ada tiket baru
         $admins = User::role('super_admin')->where('id', '!=', $ticket->user_id)->get();
 
@@ -38,6 +65,11 @@ class TicketObserver
      */
     public function updated(Ticket $ticket): void
     {
+        // Clear badge cache when ticket status or assignment changes
+        if ($ticket->isDirty(['status', 'assigned_to'])) {
+            $this->clearBadgeCache($ticket);
+        }
+
         // Cek apakah status berubah
         if ($ticket->isDirty('status')) {
             $oldStatus = $ticket->getOriginal('status');
@@ -133,7 +165,8 @@ class TicketObserver
      */
     public function deleted(Ticket $ticket): void
     {
-        //
+        // Clear badge cache when ticket is deleted
+        $this->clearBadgeCache($ticket);
     }
 
     /**

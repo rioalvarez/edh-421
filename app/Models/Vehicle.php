@@ -137,13 +137,13 @@ class Vehicle extends Model
     public function getTaxExpiryWarningAttribute(): bool
     {
         if (!$this->tax_expiry_date) return false;
-        return $this->tax_expiry_date->diffInDays(now()) <= 30 && !$this->tax_expiry_date->isPast();
+        return abs($this->tax_expiry_date->diffInDays(now())) <= 30 && !$this->tax_expiry_date->isPast();
     }
 
     public function getInspectionExpiryWarningAttribute(): bool
     {
         if (!$this->inspection_expiry_date) return false;
-        return $this->inspection_expiry_date->diffInDays(now()) <= 30 && !$this->inspection_expiry_date->isPast();
+        return abs($this->inspection_expiry_date->diffInDays(now())) <= 30 && !$this->inspection_expiry_date->isPast();
     }
 
     // Scopes

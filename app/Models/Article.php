@@ -113,19 +113,20 @@ class Article extends Model implements HasMedia
 
     /**
      * Register media conversions for featured images.
+     * Using queued() for better performance - conversions run in background.
      */
     public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')
             ->fit(Fit::Contain, 150, 150)
-            ->nonQueued();
+            ->queued();
 
         $this->addMediaConversion('preview')
             ->fit(Fit::Contain, 300, 300)
-            ->nonQueued();
+            ->queued();
 
         $this->addMediaConversion('featured')
             ->fit(Fit::Contain, 800, 600)
-            ->nonQueued();
+            ->queued();
     }
 }

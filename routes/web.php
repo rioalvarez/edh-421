@@ -3,9 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ArticleController;
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+// Redirect root ke admin panel
+Route::get('/', function () {
+    return redirect('/admin');
+});
 
 // Route Publik Artikel
 Route::get('/article/{slug}', [ArticleController::class, 'show'])->name('article.show');

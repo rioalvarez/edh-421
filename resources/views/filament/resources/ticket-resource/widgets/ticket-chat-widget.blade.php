@@ -11,48 +11,50 @@
             {{-- Chat Messages --}}
             <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 max-h-[400px] overflow-y-auto space-y-4" id="chat-container">
                 @forelse($responses as $response)
-                    @php
-                        $isCurrentUser = $response->user_id === auth()->id();
-                        $isAdmin = $response->user->hasRole('super_admin');
-                    @endphp
-                    <div class="flex {{ $isCurrentUser ? 'justify-end' : 'justify-start' }}">
-                        <div class="max-w-[80%]">
-                            {{-- Avatar & Name --}}
-                            <div class="flex items-center gap-2 mb-1 {{ $isCurrentUser ? 'justify-end' : 'justify-start' }}">
-                                @if(!$isCurrentUser)
-                                    <div class="w-7 h-7 rounded-full bg-primary-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                        {{ strtoupper(substr($response->user->name, 0, 1)) }}
-                                    </div>
-                                @endif
-                                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
-                                    {{ $response->user->name }}
-                                    @if($isAdmin)
-                                        <span class="inline-flex items-center ml-1 px-1.5 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">
-                                            IT Support
+                    @if($response->user)
+                        @php
+                            $isCurrentUser = $response->user_id === auth()->id();
+                            $isAdmin = $response->user->hasRole('super_admin');
+                        @endphp
+                        <div class="flex {{ $isCurrentUser ? 'justify-end' : 'justify-start' }}">
+                            <div class="max-w-[80%]">
+                                {{-- Avatar & Name --}}
+                                <div class="flex items-center gap-2 mb-1 {{ $isCurrentUser ? 'justify-end' : 'justify-start' }}">
+                                    @if(!$isCurrentUser)
+                                        <div class="w-7 h-7 rounded-full bg-primary-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                            {{ strtoupper(substr($response->user->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+                                    <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                        {{ $response->user->name }}
+                                        @if($isAdmin)
+                                            <span class="inline-flex items-center ml-1 px-1.5 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">
+                                                IT Support
+                                            </span>
+                                        @endif
+                                    </span>
+                                    @if($response->is_internal_note)
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                            <x-heroicon-m-lock-closed class="w-3 h-3 mr-0.5" />
+                                            Internal
                                         </span>
                                     @endif
-                                </span>
-                                @if($response->is_internal_note)
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                        <x-heroicon-m-lock-closed class="w-3 h-3 mr-0.5" />
-                                        Internal
-                                    </span>
-                                @endif
-                            </div>
+                                </div>
 
-                            {{-- Message Bubble --}}
-                            <div class="rounded-2xl px-4 py-2.5 {{ $isCurrentUser ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm shadow-sm border border-gray-200 dark:border-gray-700' }}">
-                                <div class="text-sm leading-relaxed">
-                                    {!! $response->message !!}
+                                {{-- Message Bubble --}}
+                                <div class="rounded-2xl px-4 py-2.5 {{ $isCurrentUser ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm shadow-sm border border-gray-200 dark:border-gray-700' }}">
+                                    <div class="text-sm leading-relaxed">
+                                        {!! $response->message !!}
+                                    </div>
+                                </div>
+
+                                {{-- Timestamp --}}
+                                <div class="text-xs text-gray-400 mt-1 {{ $isCurrentUser ? 'text-right' : 'text-left' }}">
+                                    {{ $response->created_at->diffForHumans() }}
                                 </div>
                             </div>
-
-                            {{-- Timestamp --}}
-                            <div class="text-xs text-gray-400 mt-1 {{ $isCurrentUser ? 'text-right' : 'text-left' }}">
-                                {{ $response->created_at->diffForHumans() }}
-                            </div>
                         </div>
-                    </div>
+                    @endif
                 @empty
                     <div class="text-center py-12 text-gray-500">
                         <x-heroicon-o-chat-bubble-left-right class="w-16 h-16 mx-auto mb-3 opacity-30" />
