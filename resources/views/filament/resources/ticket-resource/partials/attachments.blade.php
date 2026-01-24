@@ -1,10 +1,10 @@
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     @foreach($attachments as $attachment)
-        <a href="{{ Storage::url($attachment->file_path) }}" target="_blank" class="group">
+        <a href="{{ $attachment->url }}" target="_blank" class="group">
             <div class="relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-primary-500 transition-colors">
                 @if($attachment->isImage())
                     <img
-                        src="{{ Storage::url($attachment->file_path) }}"
+                        src="{{ $attachment->url }}"
                         alt="{{ $attachment->file_name }}"
                         class="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />

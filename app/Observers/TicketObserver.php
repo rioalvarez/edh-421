@@ -92,7 +92,8 @@ class TicketObserver
             ];
 
             // Notifikasi ke pelapor jika bukan dia yang mengubah
-            if ($ticket->user_id !== auth()->id()) {
+            $reporter = User::find($ticket->user_id);
+            if ($reporter && $ticket->user_id !== auth()->id()) {
                 Notification::make()
                     ->title('Status Tiket Diperbarui')
                     ->body("Tiket {$ticket->ticket_number} status berubah menjadi: {$statusLabels[$newStatus]}")
@@ -104,11 +105,12 @@ class TicketObserver
                             ->url(route('filament.admin.resources.tickets.view', $ticket))
                             ->markAsRead(),
                     ])
-                    ->sendToDatabase($ticket->user);
+                    ->sendToDatabase($reporter);
             }
 
             // Notifikasi ke assigned admin jika ada dan bukan dia yang mengubah
-            if ($ticket->assigned_to && $ticket->assigned_to !== auth()->id()) {
+            $assignedUser = $ticket->assigned_to ? User::find($ticket->assigned_to) : null;
+            if ($assignedUser && $ticket->assigned_to !== auth()->id()) {
                 Notification::make()
                     ->title('Status Tiket Diperbarui')
                     ->body("Tiket {$ticket->ticket_number} status berubah: {$statusLabels[$oldStatus]} → {$statusLabels[$newStatus]}")
@@ -120,14 +122,16 @@ class TicketObserver
                             ->url(route('filament.admin.resources.tickets.view', $ticket))
                             ->markAsRead(),
                     ])
-                    ->sendToDatabase($ticket->assignedTo);
+                    ->sendToDatabase($assignedUser);
             }
         }
 
         // Cek apakah tiket di-assign ke seseorang
         if ($ticket->isDirty('assigned_to') && $ticket->assigned_to) {
+            $newAssignedUser = User::find($ticket->assigned_to);
+
             // Jangan kirim notifikasi jika self-assign
-            if ($ticket->assigned_to !== auth()->id()) {
+            if ($newAssignedUser && $ticket->assigned_to !== auth()->id()) {
                 Notification::make()
                     ->title('Tiket Ditugaskan ke Anda')
                     ->body("Anda ditugaskan untuk menangani tiket: {$ticket->ticket_number}")
@@ -139,14 +143,15 @@ class TicketObserver
                             ->url(route('filament.admin.resources.tickets.view', $ticket))
                             ->markAsRead(),
                     ])
-                    ->sendToDatabase($ticket->assignedTo);
+                    ->sendToDatabase($newAssignedUser);
             }
 
             // Notifikasi ke pelapor
-            if ($ticket->user_id !== auth()->id()) {
+            $ticketOwner = User::find($ticket->user_id);
+            if ($ticketOwner && $newAssignedUser && $ticket->user_id !== auth()->id()) {
                 Notification::make()
                     ->title('Tiket Anda Sedang Ditangani')
-                    ->body("Tiket {$ticket->ticket_number} sedang ditangani oleh {$ticket->assignedTo->name}")
+                    ->body("Tiket {$ticket->ticket_number} sedang ditangani oleh {$newAssignedUser->name}")
                     ->icon('heroicon-o-wrench-screwdriver')
                     ->iconColor('success')
                     ->actions([
@@ -155,7 +160,7 @@ class TicketObserver
                             ->url(route('filament.admin.resources.tickets.view', $ticket))
                             ->markAsRead(),
                     ])
-                    ->sendToDatabase($ticket->user);
+                    ->sendToDatabase($ticketOwner);
             }
         }
     }

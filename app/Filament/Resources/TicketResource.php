@@ -208,19 +208,12 @@ class TicketResource extends Resource implements HasShieldPermissions
                             ->imageEditor()
                             ->maxSize(5120) // 5MB
                             ->maxFiles(5)
-                            ->disk('public') // Explicitly set disk to public
+                            ->disk('public')
                             ->directory('ticket-attachments')
                             ->visibility('public')
                             ->helperText('Upload foto kerusakan atau file pendukung (maks. 5 file, @5MB)')
                             ->columnSpanFull()
-                            ->dehydrated(false)
-                            ->afterStateHydrated(function ($component, $record) {
-                                if ($record) {
-                                    $component->state(
-                                        $record->attachments->pluck('file_path')->toArray()
-                                    );
-                                }
-                            }),
+                            ->dehydrated(false),
                     ]),
 
                 Forms\Components\Section::make('Penanganan')

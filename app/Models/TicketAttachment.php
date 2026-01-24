@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class TicketAttachment extends Model
 {
@@ -17,7 +16,7 @@ class TicketAttachment extends Model
 
     public function getUrlAttribute(): string
     {
-        return Storage::url($this->file_path);
+        return route('attachment.show', $this->id);
     }
 
     public function isImage(): bool
@@ -37,5 +36,14 @@ class TicketAttachment extends Model
         }
 
         return round($bytes, 2) . ' ' . $units[$index];
+    }
+
+    public function getDecodedFileDataAttribute(): ?string
+    {
+        if (!$this->file_data) {
+            return null;
+        }
+
+        return base64_decode($this->file_data);
     }
 }

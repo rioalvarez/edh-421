@@ -22,7 +22,8 @@
       "Bash(npx concurrently:*)",
       "Bash(netstat:*)",
       "Bash(taskkill:*)",
-      "Bash(composer dump-autoload:*)"
+      "Bash(composer dump-autoload:*)",
+      "Bash(composer require:*)"
     ]
   }
 }

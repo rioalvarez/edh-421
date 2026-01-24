@@ -27,12 +27,18 @@ class CreateTicket extends CreateRecord
 
         foreach ($attachments as $filePath) {
             if ($filePath && Storage::disk('public')->exists($filePath)) {
+                $fileContent = Storage::disk('public')->get($filePath);
+                $base64Data = base64_encode($fileContent);
+
                 $this->record->attachments()->create([
-                    'file_path' => $filePath,
                     'file_name' => basename($filePath),
                     'file_type' => Storage::disk('public')->mimeType($filePath),
                     'file_size' => Storage::disk('public')->size($filePath),
+                    'file_data' => $base64Data,
                 ]);
+
+                // Hapus file dari storage karena sudah disimpan di database
+                Storage::disk('public')->delete($filePath);
             }
         }
     }

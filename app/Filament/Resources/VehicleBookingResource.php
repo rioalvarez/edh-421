@@ -177,7 +177,9 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
 
                         Forms\Components\TimePicker::make('departure_time')
                             ->label('Jam Keberangkatan')
-                            ->seconds(false),
+                            ->seconds(false)
+                            ->required()
+                            ->helperText('Perkiraan waktu keberangkatan'),
 
                         Forms\Components\Hidden::make('_check_trigger'),
 
@@ -254,21 +256,51 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                         Forms\Components\TextInput::make('document_number')
                             ->label('Nomor Surat Tugas')
                             ->required()
-                            ->maxLength(100)
-                            ->placeholder('Contoh: ST-001/KPP/2024'),
+                            ->prefix('ST-')
+                            ->suffix('/WPJ.09/KPP.0908/' . date('Y'))
+                            ->placeholder('001')
+                            ->integer()
+                            ->minValue(1)
+                            ->maxLength(10)
+                            ->regex('/^\d+$/')
+                            ->extraInputAttributes([
+                                'onkeypress' => 'return (event.charCode >= 48 && event.charCode <= 57)',
+                                'onpaste' => 'return false',
+                                'inputmode' => 'numeric',
+                                'pattern' => '[0-9]*',
+                            ])
+                            ->helperText('Masukkan nomor urut surat tugas (contoh: 001, 002, dst)')
+                            ->validationMessages([
+                                'regex' => 'Hanya boleh diisi angka',
+                                'integer' => 'Hanya boleh diisi angka positif',
+                            ])
+                            ->dehydrateStateUsing(fn ($state) => $state ? 'ST-' . $state . '/WPJ.09/KPP.0908/' . date('Y') : null)
+                            ->afterStateHydrated(function ($component, $state) {
+                                if ($state && preg_match('/^ST-(\d+)\/WPJ\.09\/KPP\.0908\/\d{4}$/', $state, $matches)) {
+                                    $component->state($matches[1]);
+                                }
+                            }),
 
                         Forms\Components\TextInput::make('destination')
                             ->label('Alamat Tujuan')
                             ->required()
+                            ->minLength(5)
                             ->maxLength(255)
-                            ->placeholder('Alamat lengkap tujuan dinas'),
+                            ->placeholder('Alamat lengkap tujuan dinas')
+                            ->validationMessages([
+                                'min' => 'Alamat tujuan minimal 5 karakter',
+                            ]),
 
                         Forms\Components\Textarea::make('purpose')
                             ->label('Keperluan/Tujuan Dinas')
                             ->required()
+                            ->minLength(10)
                             ->rows(2)
                             ->columnSpanFull()
-                            ->placeholder('Jelaskan keperluan perjalanan dinas'),
+                            ->placeholder('Jelaskan keperluan perjalanan dinas')
+                            ->validationMessages([
+                                'min' => 'Keperluan dinas minimal 10 karakter',
+                            ]),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Data Pengemudi & Penumpang')
@@ -276,14 +308,24 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                         Forms\Components\TextInput::make('driver_name')
                             ->label('Nama Pengemudi')
                             ->required()
+                            ->minLength(3)
                             ->maxLength(100)
-                            ->placeholder('Nama lengkap pengemudi'),
+                            ->placeholder('Nama lengkap pengemudi')
+                            ->validationMessages([
+                                'min' => 'Nama pengemudi minimal 3 karakter',
+                            ]),
 
                         Forms\Components\TextInput::make('driver_phone')
                             ->label('No. Telepon Pengemudi')
                             ->tel()
-                            ->maxLength(20)
-                            ->placeholder('Contoh: 08123456789'),
+                            ->minLength(10)
+                            ->maxLength(15)
+                            ->placeholder('Contoh: 08123456789')
+                            ->regex('/^(08|62)[0-9]{8,13}$/')
+                            ->validationMessages([
+                                'regex' => 'Format nomor telepon tidak valid (contoh: 08123456789)',
+                            ])
+                            ->helperText('Format: 08XXXXXXXXXX atau 62XXXXXXXXXX'),
 
                         Forms\Components\TagsInput::make('passengers')
                             ->label('Daftar Penumpang')
@@ -296,9 +338,20 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                     ->schema([
                         Forms\Components\TextInput::make('start_odometer')
                             ->label('KM Awal')
-                            ->numeric()
+                            ->integer()
+                            ->minValue(0)
+                            ->maxValue(9999999)
                             ->suffix('km')
-                            ->placeholder('Kilometer saat berangkat'),
+                            ->placeholder('Kilometer saat berangkat')
+                            ->extraInputAttributes([
+                                'onkeypress' => 'return (event.charCode >= 48 && event.charCode <= 57)',
+                                'inputmode' => 'numeric',
+                                'pattern' => '[0-9]*',
+                            ])
+                            ->validationMessages([
+                                'min' => 'KM Awal tidak boleh negatif',
+                                'integer' => 'Hanya boleh diisi angka positif',
+                            ]),
                     ])
                     ->collapsible()
                     ->collapsed(),
@@ -308,6 +361,7 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                         Forms\Components\Textarea::make('notes')
                             ->label('Catatan Tambahan')
                             ->rows(2)
+                            ->maxLength(500)
                             ->columnSpanFull()
                             ->placeholder('Catatan tambahan (opsional)'),
                     ])->collapsible(),
@@ -452,13 +506,37 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                     ->label('Kembalikan')
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->color('success')
-                    ->form([
+                    ->form(fn (VehicleBooking $record) => [
+                        Forms\Components\Placeholder::make('start_odometer_info')
+                            ->label('KM Awal (Saat Berangkat)')
+                            ->content(fn () => $record->start_odometer ? number_format($record->start_odometer, 0, ',', '.') . ' km' : 'Tidak dicatat'),
+
                         Forms\Components\TextInput::make('end_odometer')
                             ->label('KM Akhir')
-                            ->numeric()
+                            ->integer()
+                            ->minValue(0)
                             ->suffix('km')
                             ->required()
-                            ->placeholder('Kilometer saat kembali'),
+                            ->placeholder('Kilometer saat kembali')
+                            ->extraInputAttributes([
+                                'onkeypress' => 'return (event.charCode >= 48 && event.charCode <= 57)',
+                                'inputmode' => 'numeric',
+                                'pattern' => '[0-9]*',
+                            ])
+                            ->rules([
+                                fn () => function (string $attribute, $value, \Closure $fail) use ($record) {
+                                    if ($value < 0) {
+                                        $fail('KM Akhir tidak boleh negatif.');
+                                    }
+                                    if ($record->start_odometer && $value < $record->start_odometer) {
+                                        $fail("KM Akhir harus lebih besar dari KM Awal ({$record->start_odometer} km).");
+                                    }
+                                },
+                            ])
+                            ->validationMessages([
+                                'integer' => 'Hanya boleh diisi angka positif',
+                            ])
+                            ->helperText($record->start_odometer ? "Harus lebih besar dari KM Awal: {$record->start_odometer} km" : null),
 
                         Forms\Components\Select::make('fuel_level')
                             ->label('Level BBM')
@@ -469,7 +547,8 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                                 'three_quarter' => '3/4',
                                 'full' => 'Penuh (F)',
                             ])
-                            ->required(),
+                            ->required()
+                            ->native(false),
 
                         Forms\Components\Select::make('return_condition')
                             ->label('Kondisi Kendaraan')
@@ -479,11 +558,13 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                                 'Ada kerusakan berat' => 'Ada kerusakan berat',
                                 'Perlu perbaikan segera' => 'Perlu perbaikan segera',
                             ])
-                            ->required(),
+                            ->required()
+                            ->native(false),
 
                         Forms\Components\Textarea::make('return_notes')
                             ->label('Catatan Pengembalian')
                             ->rows(2)
+                            ->maxLength(500)
                             ->placeholder('Catatan tambahan saat pengembalian (opsional)'),
                     ])
                     ->action(function (VehicleBooking $record, array $data) {
@@ -493,6 +574,9 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                             ->success()
                             ->send();
                     })
+                    ->modalHeading('Pengembalian Kendaraan')
+                    ->modalDescription(fn (VehicleBooking $record) => "Kendaraan: {$record->vehicle->plate_number} - {$record->vehicle->brand} {$record->vehicle->model}")
+                    ->modalSubmitActionLabel('Kembalikan Kendaraan')
                     ->visible(fn (VehicleBooking $record) => $record->canBeReturned()),
 
                 Tables\Actions\Action::make('cancel')
@@ -503,7 +587,13 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                         Forms\Components\Textarea::make('cancellation_reason')
                             ->label('Alasan Pembatalan')
                             ->required()
-                            ->rows(2),
+                            ->minLength(10)
+                            ->maxLength(500)
+                            ->rows(2)
+                            ->placeholder('Jelaskan alasan pembatalan peminjaman...')
+                            ->validationMessages([
+                                'min' => 'Alasan pembatalan minimal 10 karakter',
+                            ]),
                     ])
                     ->action(function (VehicleBooking $record, array $data) {
                         $record->cancel($data['cancellation_reason']);
@@ -512,6 +602,10 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
                             ->warning()
                             ->send();
                     })
+                    ->modalHeading('Batalkan Peminjaman')
+                    ->modalDescription(fn (VehicleBooking $record) => "Apakah Anda yakin ingin membatalkan peminjaman {$record->booking_number}?")
+                    ->modalSubmitActionLabel('Ya, Batalkan')
+                    ->requiresConfirmation()
                     ->visible(fn (VehicleBooking $record) => $record->canBeCancelled()),
 
                 Tables\Actions\ViewAction::make(),

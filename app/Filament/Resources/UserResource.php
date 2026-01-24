@@ -23,6 +23,8 @@ use Filament\Tables\Actions\ExportBulkAction;
 use App\Filament\Resources\UserResource\Pages;
 use STS\FilamentImpersonate\Tables\Actions\Impersonate;
 use Filament\Infolists\Components\Section as InfolistSection;
+use Spatie\Permission\Models\Role;
+use Filament\Notifications\Notification;
 
 class UserResource extends Resource
 {
@@ -139,16 +141,25 @@ class UserResource extends Resource
                     ->label('Atur Role')
                     ->icon('heroicon-m-adjustments-vertical')
                     ->form([
-                        Select::make('role')
+                        Select::make('roles')
                             ->label('Role')
-                            ->relationship('roles', 'name')
+                            ->options(Role::pluck('name', 'id'))
                             ->multiple()
                             ->required()
                             ->searchable()
                             ->preload()
-                            ->optionsLimit(10)
-                            ->getOptionLabelFromRecordUsing(fn($record) => $record->name),
-                    ]),
+                            ->default(fn ($record) => $record->roles->pluck('id')->toArray()),
+                    ])
+                    ->action(function (array $data, User $record) {
+                        $roles = Role::whereIn('id', $data['roles'])->get();
+                        $record->syncRoles($roles);
+
+                        Notification::make()
+                            ->title('Role berhasil diperbarui')
+                            ->body("Role untuk {$record->name} telah diperbarui.")
+                            ->success()
+                            ->send();
+                    }),
                 // Impersonate::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -160,6 +171,48 @@ class UserResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('assignRoles')
+                        ->label('Atur Role')
+                        ->icon('heroicon-o-shield-check')
+                        ->color('primary')
+                        ->form([
+                            Select::make('roles')
+                                ->label('Pilih Role')
+                                ->options(Role::pluck('name', 'id'))
+                                ->multiple()
+                                ->required()
+                                ->searchable()
+                                ->preload(),
+                            Select::make('mode')
+                                ->label('Mode')
+                                ->options([
+                                    'sync' => 'Ganti semua role (Replace)',
+                                    'attach' => 'Tambahkan role (Append)',
+                                ])
+                                ->default('sync')
+                                ->required()
+                                ->helperText('Replace: Hapus role lama, ganti dengan yang baru. Append: Tambahkan role tanpa menghapus yang lama.'),
+                        ])
+                        ->action(function (array $data, $records) {
+                            $roles = Role::whereIn('id', $data['roles'])->get();
+                            $count = 0;
+
+                            foreach ($records as $user) {
+                                if ($data['mode'] === 'sync') {
+                                    $user->syncRoles($roles);
+                                } else {
+                                    $user->assignRole($roles);
+                                }
+                                $count++;
+                            }
+
+                            Notification::make()
+                                ->title('Role berhasil diperbarui')
+                                ->body("{$count} user telah diperbarui.")
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
                 ExportBulkAction::make()
