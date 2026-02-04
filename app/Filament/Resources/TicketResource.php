@@ -41,7 +41,7 @@ class TicketResource extends Resource implements HasShieldPermissions
         $query = parent::getEloquentQuery()
             ->with(['user', 'assignedTo', 'device']); // Eager loading untuk performa
 
-        if (!auth()->user()->hasRole('super_admin')) {
+        if (!auth()->user()->hasAnyRole(['super_admin', 'Admin'])) {
             $query->where('user_id', auth()->id());
         }
 
@@ -65,7 +65,7 @@ class TicketResource extends Resource implements HasShieldPermissions
     public static function getNavigationBadge(): ?string
     {
         $userId = auth()->id();
-        $isAdmin = auth()->user()->hasRole('super_admin');
+        $isAdmin = auth()->user()->hasAnyRole(['super_admin', 'Admin']);
         $cacheKey = "ticket_badge_{$userId}_" . ($isAdmin ? 'admin' : 'user');
 
         return Cache::remember($cacheKey, now()->addMinutes(2), function () use ($isAdmin, $userId) {
@@ -83,7 +83,7 @@ class TicketResource extends Resource implements HasShieldPermissions
     public static function getNavigationBadgeColor(): ?string
     {
         $userId = auth()->id();
-        $isAdmin = auth()->user()->hasRole('super_admin');
+        $isAdmin = auth()->user()->hasAnyRole(['super_admin', 'Admin']);
         $cacheKey = "ticket_badge_color_{$userId}_" . ($isAdmin ? 'admin' : 'user');
 
         return Cache::remember($cacheKey, now()->addMinutes(2), function () use ($isAdmin, $userId) {
@@ -117,7 +117,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                             ->preload()
                             ->required()
                             ->default(fn () => auth()->id())
-                            ->disabled(fn () => !auth()->user()->hasRole('super_admin')),
+                            ->disabled(fn () => !auth()->user()->hasAnyRole(['super_admin', 'Admin'])),
 
                         Forms\Components\Select::make('device_id')
                             ->label('Perangkat Terkait')
@@ -139,7 +139,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                             ->nullable()
                             ->reactive()
                             ->helperText('Pilih perangkat yang bermasalah (opsional)')
-                            ->disabled(fn ($record, Forms\Get $get) => ($record !== null && !auth()->user()->hasRole('super_admin')) || $get('is_external_device')),
+                            ->disabled(fn ($record, Forms\Get $get) => ($record !== null && !auth()->user()->hasAnyRole(['super_admin', 'Admin'])) || $get('is_external_device')),
 
                         Forms\Components\Toggle::make('is_external_device')
                             ->label('Perangkat Luar/Lainnya')
@@ -158,7 +158,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                             ])
                             ->required()
                             ->default('hardware')
-                            ->disabled(fn ($record) => $record !== null && !auth()->user()->hasRole('super_admin')),
+                            ->disabled(fn ($record) => $record !== null && !auth()->user()->hasAnyRole(['super_admin', 'Admin'])),
 
                         Forms\Components\Select::make('priority')
                             ->label('Prioritas')
@@ -169,7 +169,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                                     'high' => 'Tinggi',
                                 ];
                                 // Hanya admin yang bisa set prioritas Kritis
-                                if (auth()->user()->hasRole('super_admin')) {
+                                if (auth()->user()->hasAnyRole(['super_admin', 'Admin'])) {
                                     $options['critical'] = 'Kritis';
                                 }
                                 return $options;
@@ -185,7 +185,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                             ->required()
                             ->maxLength(255)
                             ->placeholder('Ringkasan singkat masalah')
-                            ->disabled(fn ($record) => $record !== null && !auth()->user()->hasRole('super_admin')),
+                            ->disabled(fn ($record) => $record !== null && !auth()->user()->hasAnyRole(['super_admin', 'Admin'])),
 
                         Forms\Components\RichEditor::make('description')
                             ->label('Deskripsi')
@@ -199,7 +199,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                                 'orderedList',
                             ])
                             ->columnSpanFull()
-                            ->disabled(fn ($record) => $record !== null && !auth()->user()->hasRole('super_admin')),
+                            ->disabled(fn ($record) => $record !== null && !auth()->user()->hasAnyRole(['super_admin', 'Admin'])),
 
                         Forms\Components\FileUpload::make('attachments')
                             ->label('Lampiran Foto/File')
@@ -221,7 +221,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                         Forms\Components\Select::make('assigned_to')
                             ->label('Ditugaskan Ke')
                             ->options(function () {
-                                return User::role('super_admin')
+                                return User::role('Admin')
                                     ->pluck('name', 'id');
                             })
                             ->searchable()
@@ -249,7 +249,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                             ->columnSpanFull()
                             ->visible(fn (Forms\Get $get) => in_array($get('status'), ['resolved', 'closed'])),
                     ])->columns(2)
-                    ->visible(fn () => auth()->user()->hasRole('super_admin')),
+                    ->visible(fn () => auth()->user()->hasAnyRole(['super_admin', 'Admin'])),
             ]);
     }
 
@@ -432,7 +432,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                         Forms\Components\Select::make('assigned_to')
                             ->label('Tugaskan Ke')
                             ->options(function () {
-                                return User::role('super_admin')
+                                return User::role('Admin')
                                     ->pluck('name', 'id');
                             })
                             ->required(),
@@ -443,7 +443,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                             'status' => 'in_progress',
                         ]);
                     })
-                    ->visible(fn (Ticket $record) => $record->status === 'open' && auth()->user()->hasRole('super_admin')),
+                    ->visible(fn (Ticket $record) => $record->status === 'open' && auth()->user()->hasAnyRole(['super_admin', 'Admin'])),
 
                 Tables\Actions\Action::make('resolve')
                     ->label('Selesaikan')
@@ -458,7 +458,7 @@ class TicketResource extends Resource implements HasShieldPermissions
                     ->action(function (Ticket $record, array $data) {
                         $record->markAsResolved($data['resolution_notes']);
                     })
-                    ->visible(fn (Ticket $record) => in_array($record->status, ['open', 'in_progress', 'waiting_for_user']) && auth()->user()->hasRole('super_admin')),
+                    ->visible(fn (Ticket $record) => in_array($record->status, ['open', 'in_progress', 'waiting_for_user']) && auth()->user()->hasAnyRole(['super_admin', 'Admin'])),
 
                 Tables\Actions\Action::make('close')
                     ->label('Tutup')
@@ -470,9 +470,9 @@ class TicketResource extends Resource implements HasShieldPermissions
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
-                    ->visible(fn () => auth()->user()->hasRole('super_admin')),
+                    ->visible(fn () => auth()->user()->hasAnyRole(['super_admin', 'Admin'])),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn () => auth()->user()->hasRole('super_admin')),
+                    ->visible(fn () => auth()->user()->hasAnyRole(['super_admin', 'Admin'])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

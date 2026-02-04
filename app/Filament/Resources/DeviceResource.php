@@ -81,13 +81,16 @@ class DeviceResource extends Resource implements HasShieldPermissions
                             ->helperText('Kosongkan jika device belum digunakan'),
 
                         Forms\Components\TextInput::make('hostname')
+                            ->required()
                             ->maxLength(255)
-                            ->placeholder('cth: PC-FINANCE-01'),
+                            ->placeholder('cth: PC150421XXX'),
 
                         Forms\Components\TextInput::make('ip_address')
                             ->label('IP Address')
+                            ->required()
+                            ->ip()
                             ->maxLength(45)
-                            ->placeholder('cth: 192.168.1.100'),
+                            ->placeholder('cth: 10.9.1.XXX'),
 
                         Forms\Components\TextInput::make('mac_address')
                             ->label('MAC Address')

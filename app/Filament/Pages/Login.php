@@ -16,6 +16,9 @@ class Login extends BaseLogin
 {
     protected static string $view = 'filament.pages.login';
 
+    public ?string $nipValidationStatus = null; // 'valid', 'invalid', or null
+    public ?string $nipValidationMessage = null;
+
     public function authenticate(): ?LoginResponse
     {
         try {
@@ -28,16 +31,28 @@ class Login extends BaseLogin
 
         $data = $this->form->getState();
 
-        // Check if user exists and was created through social login (no password)
+        // Check if user exists
         $user = \App\Models\User::where('nip', $data['nip'])->first();
-        if ($user && is_null($user->password)) {
+
+        // Validasi 1: NIP tidak terdaftar
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'data.nip' => 'NIP tidak terdaftar dalam sistem.',
+            ]);
+        }
+
+        // Validasi 2: User dibuat melalui social login (password null)
+        if (is_null($user->password)) {
             throw ValidationException::withMessages([
                 'data.nip' => 'Akun ini dibuat melalui social login. Silakan login dengan Google.',
             ]);
         }
 
+        // Validasi 3: Password tidak sesuai
         if (! Filament::auth()->attempt($this->getCredentialsFromFormData($data), $data['remember'] ?? false)) {
-            $this->throwFailureValidationException();
+            throw ValidationException::withMessages([
+                'data.password' => 'Password tidak sesuai.',
+            ]);
         }
 
         $user = Filament::auth()->user();
@@ -60,6 +75,10 @@ class Login extends BaseLogin
     {
         parent::mount();
 
+        // Reset validation status
+        $this->nipValidationStatus = null;
+        $this->nipValidationMessage = null;
+
         // Only pre-fill credentials in local development environment
         if (app()->environment('local')) {
             $this->form->fill([
@@ -67,6 +86,9 @@ class Login extends BaseLogin
                 'password' => 'password',
                 'remember' => true,
             ]);
+
+            // Validate pre-filled NIP
+            $this->validateNipRealtime('123456789');
         }
     }
 
@@ -99,7 +121,34 @@ class Login extends BaseLogin
             ->maxLength(9)
             ->autocomplete('username')
             ->autofocus()
-            ->extraInputAttributes(['inputmode' => 'numeric']);
+            ->extraInputAttributes(['inputmode' => 'numeric'])
+            ->live(debounce: 500)
+            ->afterStateUpdated(function (?string $state) {
+                $this->validateNipRealtime($state);
+            })
+            ->hint(fn () => $this->nipValidationMessage)
+            ->hintColor(fn () => $this->nipValidationStatus === 'valid' ? 'success' : 'danger');
+    }
+
+    protected function validateNipRealtime(?string $nip): void
+    {
+        // Reset jika input kosong atau belum 9 digit
+        if (empty($nip) || strlen($nip) < 9) {
+            $this->nipValidationStatus = null;
+            $this->nipValidationMessage = null;
+            return;
+        }
+
+        // Cek apakah NIP terdaftar di database
+        $user = \App\Models\User::where('nip', $nip)->first();
+
+        if ($user) {
+            $this->nipValidationStatus = 'valid';
+            $this->nipValidationMessage = '✓ NIP terdaftar: ' . $user->name;
+        } else {
+            $this->nipValidationStatus = 'invalid';
+            $this->nipValidationMessage = '✗ NIP tidak terdaftar dalam sistem';
+        }
     }
 
     protected function getCredentialsFromFormData(array $data): array

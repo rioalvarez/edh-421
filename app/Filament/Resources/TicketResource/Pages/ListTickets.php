@@ -20,21 +20,34 @@ class ListTickets extends ListRecords
         ];
     }
 
+
     public function getTabs(): array
     {
+        $user = auth()->user();
+        $isAdmin = $user->hasAnyRole(['super_admin', 'Admin']);
+
+        // Helper untuk membuat query dengan filter user
+        $getCount = function (string $status) use ($user, $isAdmin) {
+            $query = \App\Models\Ticket::where('status', $status);
+            if (!$isAdmin) {
+                $query->where('user_id', $user->id);
+            }
+            return $query->count();
+        };
+
         return [
             'all' => Tab::make('Semua'),
             'open' => Tab::make('Dibuka')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'open'))
-                ->badge(fn () => \App\Models\Ticket::where('status', 'open')->count())
+                ->badge(fn () => $getCount('open'))
                 ->badgeColor('danger'),
             'in_progress' => Tab::make('Diproses')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'in_progress'))
-                ->badge(fn () => \App\Models\Ticket::where('status', 'in_progress')->count())
+                ->badge(fn () => $getCount('in_progress'))
                 ->badgeColor('warning'),
             'resolved' => Tab::make('Selesai')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'resolved'))
-                ->badge(fn () => \App\Models\Ticket::where('status', 'resolved')->count())
+                ->badge(fn () => $getCount('resolved'))
                 ->badgeColor('success'),
             'closed' => Tab::make('Ditutup')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'closed')),

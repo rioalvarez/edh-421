@@ -19,14 +19,23 @@ class TicketStatsWidget extends Widget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasRole('super_admin');
+        return true; // Semua user bisa melihat statistik tiket miliknya
     }
 
     public function getStats(): array
     {
-        $stats = Cache::remember('ticket_stats_widget', now()->addMinute(), function () {
+        $user = auth()->user();
+        $isAdmin = $user->hasAnyRole(['super_admin', 'Admin']);
+        $cacheKey = 'ticket_stats_widget_' . ($isAdmin ? 'admin' : 'user_' . $user->id);
+
+        $stats = Cache::remember($cacheKey, now()->addMinute(), function () use ($user, $isAdmin) {
             $baseQuery = Ticket::query();
-            
+
+            // Filter berdasarkan user jika bukan admin
+            if (!$isAdmin) {
+                $baseQuery->where('user_id', $user->id);
+            }
+
             return [
                 'newTickets' => (clone $baseQuery)->where('status', 'open')->count(),
                 'inProgressTickets' => (clone $baseQuery)->where('status', 'in_progress')->count(),
