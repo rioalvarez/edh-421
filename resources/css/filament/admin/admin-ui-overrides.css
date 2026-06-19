@@ -1,0 +1,132 @@
+body.admin-sidebar-soft .fi-sidebar,
+body.admin-sidebar-soft .fi-sidebar-header {
+    background-color: rgba(var(--gray-50), 0.96);
+}
+
+.dark body.admin-sidebar-soft .fi-sidebar,
+.dark body.admin-sidebar-soft .fi-sidebar-header {
+    background-color: rgba(var(--gray-950), 0.92);
+}
+
+body.admin-sidebar-contrast .fi-sidebar,
+body.admin-sidebar-contrast .fi-sidebar-header {
+    background-color: rgba(var(--gray-100), 0.98);
+}
+
+.dark body.admin-sidebar-contrast .fi-sidebar,
+.dark body.admin-sidebar-contrast .fi-sidebar-header {
+    background-color: rgba(var(--gray-900), 0.98);
+}
+
+body.admin-sidebar-dark .fi-sidebar,
+body.admin-sidebar-dark .fi-sidebar-header {
+    background-color: rgb(17 24 39);
+}
+
+body.admin-sidebar-dark .fi-sidebar-header {
+    border-color: rgb(31 41 55);
+}
+
+body.admin-sidebar-dark .fi-sidebar-group-label,
+body.admin-sidebar-dark .fi-sidebar-group-icon,
+body.admin-sidebar-dark .fi-sidebar-item-label,
+body.admin-sidebar-dark .fi-sidebar-item-icon {
+    color: rgb(209 213 219);
+}
+
+body.admin-sidebar-dark .fi-sidebar-item.fi-active .fi-sidebar-item-button {
+    background-color: rgba(var(--primary-500), 0.18);
+}
+
+body.admin-sidebar-dark .fi-sidebar-item.fi-active .fi-sidebar-item-label,
+body.admin-sidebar-dark .fi-sidebar-item.fi-active .fi-sidebar-item-icon {
+    color: rgb(255 255 255);
+}
+
+body.admin-navbar-elevated .fi-topbar {
+    box-shadow: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+body.admin-navbar-bordered .fi-topbar {
+    border-bottom: 1px solid rgba(var(--gray-200), 1);
+}
+
+.dark body.admin-navbar-bordered .fi-topbar {
+    border-bottom-color: rgb(255 255 255 / 0.1);
+}
+
+body.admin-navbar-glass .fi-topbar {
+    background-color: rgb(255 255 255 / 0.78);
+    backdrop-filter: blur(14px);
+}
+
+.dark body.admin-navbar-glass .fi-topbar {
+    background-color: rgb(17 24 39 / 0.72);
+}
+
+body.admin-density-compact .fi-main {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+body.admin-density-compact .fi-section-content,
+body.admin-density-compact .fi-ta-header,
+body.admin-density-compact .fi-ta-content {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+body.admin-density-compact .fi-ta-cell {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+body.admin-density-dense .fi-main {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+body.admin-density-dense .fi-section-header,
+body.admin-density-dense .fi-section-content,
+body.admin-density-dense .fi-ta-header,
+body.admin-density-dense .fi-ta-content {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+}
+
+body.admin-density-dense .fi-ta-cell {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+}
+
+body.admin-density-dense .fi-sidebar-nav {
+    gap: 1rem;
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+}
+
+body.admin-radius-soft .fi-section,
+body.admin-radius-soft .fi-ta-ctn,
+body.admin-radius-soft .fi-modal-window,
+body.admin-radius-soft .fi-input-wrp,
+body.admin-radius-soft .fi-btn,
+body.admin-radius-soft .fi-dropdown-panel {
+    border-radius: 0.75rem;
+}
+
+body.admin-radius-sharp .fi-section,
+body.admin-radius-sharp .fi-ta-ctn,
+body.admin-radius-sharp .fi-modal-window,
+body.admin-radius-sharp .fi-input-wrp,
+body.admin-radius-sharp .fi-btn,
+body.admin-radius-sharp .fi-dropdown-panel {
+    border-radius: 0.375rem;
+}
+
+body.admin-width-wide .fi-main {
+    max-width: 96rem;
+}
+
+body.admin-width-full .fi-main {
+    max-width: none;
+}

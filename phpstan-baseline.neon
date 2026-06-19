@@ -1,0 +1,343 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to an undefined method Filament\\Actions\\Imports\\ImportColumn\:\:validationMessages\(\)\.$#'
+			identifier: method.notFound
+			count: 8
+			path: app/Filament/Imports/DeviceImporter.php
+
+		-
+			message: '#^Call to an undefined method Filament\\Actions\\Imports\\ImportColumn\:\:validationMessages\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: app/Filament/Imports/UserImporter.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:attachments\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Pages/CreateTicket.php
+
+		-
+			message: '#^Cannot call method attachments\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Pages/EditTicket.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$assignedTo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Pages/ViewTicket.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$assigned_to\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Pages/ViewTicket.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Pages/ViewTicket.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Pages/ViewTicket.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:reopen\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Pages/ViewTicket.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/RelationManagers/ResponsesRelationManager.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$active_tickets\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Schemas/TicketForm.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$active_tickets\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Tables/Concerns/TicketActions.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:each\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: mixed, Closure\(App\\Models\\Ticket\)\: void given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Tables/Concerns/TicketActions.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$first_responded_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Widgets/TicketChatWidget.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Widgets/TicketChatWidget.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:responses\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Widgets/TicketChatWidget.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:attributeValues\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Filament/Modules/Inventaris/Resources/DeviceResource/Pages/CreateDevice.php
+
+		-
+			message: '#^Cannot call method attributeValues\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: app/Filament/Modules/Inventaris/Resources/DeviceResource/Pages/EditDevice.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$destination\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Pages/VehicleCalendar.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$end_date\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Modules/KendaraanDinas/Pages/VehicleCalendar.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Pages/VehicleCalendar.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$start_date\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Modules/KendaraanDinas/Pages/VehicleCalendar.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Pages/VehicleCalendar.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Pages/VehicleCalendar.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Vehicle\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Pages/VehicleCalendar.php
+
+		-
+			message: '#^Anonymous function should return Illuminate\\Support\\Collection\<int, int\|string\|null\> but returns Illuminate\\Support\\Collection\<int, int\|string\|null\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Resources/VehicleBookingResource.php
+
+		-
+			message: '#^Cannot access property \$id on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Resources/VehicleBookingResource/Pages/EditVehicleBooking.php
+
+		-
+			message: '#^Cannot call method canBeCancelled\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Resources/VehicleBookingResource/Pages/ViewVehicleBooking.php
+
+		-
+			message: '#^Cannot call method canBeEdited\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Resources/VehicleBookingResource/Pages/ViewVehicleBooking.php
+
+		-
+			message: '#^Cannot call method canBeReturned\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Resources/VehicleBookingResource/Pages/ViewVehicleBooking.php
+
+		-
+			message: '#^Cannot call method cancel\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Resources/VehicleBookingResource/Pages/ViewVehicleBooking.php
+
+		-
+			message: '#^Cannot call method markAsReturned\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Filament/Modules/KendaraanDinas/Resources/VehicleBookingResource/Pages/ViewVehicleBooking.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:syncPermissions\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Filament/Modules/ManajemenUser/Resources/RoleResource/Pages/CreateRole.php
+
+		-
+			message: '#^Cannot call method syncPermissions\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Filament/Modules/ManajemenUser/Resources/RoleResource/Pages/EditRole.php
+
+		-
+			message: '#^Method App\\Filament\\Pages\\Login\:\:getForms\(\) has invalid return type App\\Filament\\Pages\\Form\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Filament/Pages/Login.php
+
+		-
+			message: '#^Method App\\Filament\\Pages\\Login\:\:getForms\(\) should return array\<int\|string, App\\Filament\\Pages\\Form\|string\> but returns array\<string, Filament\\Forms\\Form\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Filament/Pages/Login.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Widgets/VehicleAvailabilityCalendar.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\VehicleBooking\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Filament/Widgets/VehicleAvailabilityCalendar.php
+
+		-
+			message: '#^Parameter \$book of method App\\Http\\Controllers\\BookController\:\:destroy\(\) has invalid type App\\Models\\Book\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/BookController.php
+
+		-
+			message: '#^Parameter \$book of method App\\Http\\Controllers\\BookController\:\:edit\(\) has invalid type App\\Models\\Book\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/BookController.php
+
+		-
+			message: '#^Parameter \$book of method App\\Http\\Controllers\\BookController\:\:show\(\) has invalid type App\\Models\\Book\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/BookController.php
+
+		-
+			message: '#^Parameter \$book of method App\\Http\\Controllers\\BookController\:\:update\(\) has invalid type App\\Models\\Book\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Controllers/BookController.php
+
+		-
+			message: '#^Comparison operation "\>\=" between int\<7, max\> and 7 is always true\.$#'
+			identifier: greaterOrEqual.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/TicketReportController.php
+
+		-
+			message: '#^Call to an undefined method Spatie\\Image\\Drivers\\ImageDriver\:\:queued\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: app/Models/Article.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Device.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: app/Models/DeviceAttribute.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Models/Ticket.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type App\\Enums\\TicketPriority\:\:Critical\|App\\Enums\\TicketPriority\:\:High\|App\\Enums\\TicketPriority\:\:Low\|App\\Enums\\TicketPriority\:\:Medium\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Models/Ticket.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/TicketResponse.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isSuperAdmin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/TicketResponse.php
+
+		-
+			message: '#^PHPDoc type array\<int, string\> of property App\\Models\\User\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^PHPDoc type array\<int, string\> of property App\\Models\\User\:\:\$hidden is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$hidden\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method App\\Models\\VehicleBooking\:\:getDurationDaysAttribute\(\) should return int but returns float\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/VehicleBooking.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Observers/TicketObserver.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$display_name\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Observers/VehicleBookingObserver.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Observers/VehicleBookingObserver.php
+
+		-
+			message: '#^Parameter \#1 \$string of function str_pad expects string, int\<0, 99999999\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Providers/Filament/AdminPanelProvider.php
