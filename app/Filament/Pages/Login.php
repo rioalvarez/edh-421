@@ -15,10 +15,6 @@ class Login extends BaseLogin
 {
     protected static string $view = 'filament.pages.login';
 
-    public ?string $nipValidationStatus = null; // 'valid', 'invalid', or null
-
-    public ?string $nipValidationMessage = null;
-
     public function authenticate(): ?LoginResponse
     {
         try {
@@ -31,27 +27,26 @@ class Login extends BaseLogin
 
         $data = $this->form->getState();
 
-        // Check if user exists
         $user = \App\Models\User::where('nip', $data['nip'])->first();
 
-        // Validasi 1: NIP tidak terdaftar
+        // Validasi: NIP tidak terdaftar atau password salah — pesan generik untuk keamanan
         if (! $user) {
             throw ValidationException::withMessages([
-                'data.nip' => 'NIP tidak terdaftar dalam sistem.',
+                'data.nip' => 'NIP atau password tidak sesuai.',
             ]);
         }
 
-        // Validasi 2: User dibuat melalui social login (password null)
+        // Validasi: User SSO-only (password null)
         if (is_null($user->password)) {
             throw ValidationException::withMessages([
-                'data.nip' => 'Akun ini dibuat melalui social login. Silakan login dengan Google.',
+                'data.nip' => 'Akun ini terdaftar melalui Google SSO. Silakan gunakan tombol "Login dengan Google" di bawah.',
             ]);
         }
 
-        // Validasi 3: Password tidak sesuai
+        // Validasi: Password tidak sesuai — pesan generik
         if (! Filament::auth()->attempt($this->getCredentialsFromFormData($data), $data['remember'] ?? false)) {
             throw ValidationException::withMessages([
-                'data.password' => 'Password tidak sesuai.',
+                'data.nip' => 'NIP atau password tidak sesuai.',
             ]);
         }
 
@@ -74,22 +69,6 @@ class Login extends BaseLogin
     public function mount(): void
     {
         parent::mount();
-
-        // Reset validation status
-        $this->nipValidationStatus = null;
-        $this->nipValidationMessage = null;
-
-        // Only pre-fill credentials in local development environment
-        if (app()->environment('local')) {
-            $this->form->fill([
-                'nip' => '123456789',
-                'password' => 'password',
-                'remember' => true,
-            ]);
-
-            // Validate pre-filled NIP
-            $this->validateNipRealtime('123456789');
-        }
     }
 
     /**
@@ -121,35 +100,18 @@ class Login extends BaseLogin
             ->maxLength(9)
             ->autocomplete('username')
             ->autofocus()
-            ->extraInputAttributes(['inputmode' => 'numeric'])
-            ->live(debounce: 500)
-            ->afterStateUpdated(function (?string $state) {
-                $this->validateNipRealtime($state);
-            })
-            ->hint(fn () => $this->nipValidationMessage)
-            ->hintColor(fn () => $this->nipValidationStatus === 'valid' ? 'success' : 'danger');
+            ->extraInputAttributes(['inputmode' => 'numeric']);
     }
 
-    protected function validateNipRealtime(?string $nip): void
+    protected function getPasswordFormComponent(): Component
     {
-        // Reset jika input kosong atau belum 9 digit
-        if (empty($nip) || strlen($nip) < 9) {
-            $this->nipValidationStatus = null;
-            $this->nipValidationMessage = null;
-
-            return;
-        }
-
-        // Cek apakah NIP terdaftar di database
-        $user = \App\Models\User::where('nip', $nip)->first();
-
-        if ($user) {
-            $this->nipValidationStatus = 'valid';
-            $this->nipValidationMessage = '✓ NIP terdaftar: '.$user->name;
-        } else {
-            $this->nipValidationStatus = 'invalid';
-            $this->nipValidationMessage = '✗ NIP tidak terdaftar dalam sistem';
-        }
+        return TextInput::make('password')
+            ->label('Password')
+            ->placeholder('Masukkan password')
+            ->password()
+            ->revealable()
+            ->required()
+            ->autocomplete('current-password');
     }
 
     protected function getCredentialsFromFormData(array $data): array

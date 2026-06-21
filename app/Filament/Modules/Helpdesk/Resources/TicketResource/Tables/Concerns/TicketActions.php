@@ -4,8 +4,10 @@ namespace App\Filament\Modules\Helpdesk\Resources\TicketResource\Tables\Concerns
 
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
+use App\Models\TicketRating;
 use App\Models\User;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -47,14 +49,6 @@ class TicketActions
                 })
                 ->visible(fn (Ticket $record) => in_array($record->status, TicketStatus::openValues(), true) && auth()->user()->isItAdmin()),
 
-            Tables\Actions\Action::make('close')
-                ->label('Tutup')
-                ->icon('heroicon-o-x-circle')
-                ->color('gray')
-                ->requiresConfirmation()
-                ->action(fn (Ticket $record) => $record->close())
-                ->visible(fn (Ticket $record) => $record->status === TicketStatus::Resolved->value && auth()->user()->isItAdmin()),
-
             Tables\Actions\Action::make('reopen')
                 ->label('Buka Kembali')
                 ->icon('heroicon-o-arrow-path')
@@ -70,6 +64,48 @@ class TicketActions
                         || $record->user_id === auth()->id()
                     )
                 ),
+
+            Tables\Actions\Action::make('rate')
+                ->label('Beri Rating')
+                ->icon('heroicon-o-star')
+                ->color('warning')
+                ->form([
+                    Forms\Components\Placeholder::make('rating_info')
+                        ->label('')
+                        ->content('Bagaimana penilaian Anda atas penyelesaian tiket ini?'),
+                    Forms\Components\Select::make('score')
+                        ->label('Rating')
+                        ->options([
+                            1 => '⭐ 1 - Sangat Buruk',
+                            2 => '⭐⭐ 2 - Buruk',
+                            3 => '⭐⭐⭐ 3 - Cukup',
+                            4 => '⭐⭐⭐⭐ 4 - Baik',
+                            5 => '⭐⭐⭐⭐⭐ 5 - Sangat Baik',
+                        ])
+                        ->required()
+                        ->native(false),
+                    Forms\Components\Textarea::make('feedback')
+                        ->label('Komentar (opsional)')
+                        ->rows(2)
+                        ->maxLength(500)
+                        ->placeholder('Ceritakan pengalaman Anda...'),
+                ])
+                ->action(function (Ticket $record, array $data) {
+                    TicketRating::create([
+                        'ticket_id' => $record->id,
+                        'user_id' => auth()->id(),
+                        'score' => $data['score'],
+                        'feedback' => trim($data['feedback'] ?? '') ?: null,
+                    ]);
+                    $record->close();
+                    Notification::make()
+                        ->title('Terima kasih atas penilaian Anda!')
+                        ->success()
+                        ->send();
+                })
+                ->modalHeading('Beri Penilaian Tiket')
+                ->modalSubmitActionLabel('Kirim Penilaian')
+                ->visible(fn (Ticket $record) => $record->canBeRated() && (int) $record->user_id === (int) auth()->id()),
 
             Tables\Actions\ViewAction::make(),
             Tables\Actions\EditAction::make()
@@ -111,7 +147,11 @@ class TicketActions
                     ->form([
                         Forms\Components\Select::make('status')
                             ->label('Status Baru')
-                            ->options(TicketStatus::options())
+                            ->options(
+                                collect(TicketStatus::options())
+                                    ->except(TicketStatus::Closed->value)
+                                    ->all()
+                            )
                             ->required(),
                     ])
                     ->action(function (Collection $records, array $data) {
@@ -122,25 +162,8 @@ class TicketActions
                                 $updates['resolved_at'] = now();
                             }
 
-                            if ($data['status'] === TicketStatus::Closed->value && ! $ticket->closed_at) {
-                                $updates['closed_at'] = now();
-                            }
-
                             $ticket->update($updates);
                         });
-                    })
-                    ->deselectRecordsAfterCompletion()
-                    ->visible(fn () => auth()->user()->isItAdmin()),
-
-                Tables\Actions\BulkAction::make('bulk_close')
-                    ->label('Tutup Tiket')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('gray')
-                    ->requiresConfirmation()
-                    ->modalHeading('Tutup tiket terpilih?')
-                    ->modalDescription('Semua tiket yang dipilih akan ditutup.')
-                    ->action(function (Collection $records) {
-                        $records->each(fn (Ticket $ticket) => $ticket->close());
                     })
                     ->deselectRecordsAfterCompletion()
                     ->visible(fn () => auth()->user()->isItAdmin()),

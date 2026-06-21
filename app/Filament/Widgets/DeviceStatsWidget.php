@@ -26,6 +26,14 @@ class DeviceStatsWidget extends Widget
 
     protected int|string|array $columnSpan = 'full';
 
+    /**
+     * Generate SQL placeholders for an array of values.
+     */
+    private function placeholders(array $values): string
+    {
+        return implode(',', array_fill(0, count($values), '?'));
+    }
+
     public static function canView(): bool
     {
         if (! static::passesModuleWidgetGate()) {
@@ -40,16 +48,32 @@ class DeviceStatsWidget extends Widget
     public function getStats(): array
     {
         $stats = Cache::remember('device_stats_widget', now()->addMinutes(2), function () {
-            $baseQuery = Device::query();
+            // Single aggregated query instead of 7 separate COUNT queries
+            $row = Device::selectRaw("
+                COUNT(*) as total_devices,
+                SUM(status = ?) as active_devices,
+                SUM(status = ?) as maintenance_devices,
+                SUM(status = ?) as retired_devices,
+                SUM(`condition` IN ({$this->placeholders(DeviceCondition::poorValues())})) as poor_condition_devices,
+                SUM(user_id IS NULL AND status = ?) as unassigned_devices,
+                SUM(ip_address IS NULL AND status != ?) as no_ip_address
+            ", [
+                DeviceStatus::Active->value,
+                DeviceStatus::Maintenance->value,
+                DeviceStatus::Retired->value,
+                ...DeviceCondition::poorValues(),
+                DeviceStatus::Active->value,
+                DeviceStatus::Retired->value,
+            ])->first();
 
             return [
-                'totalDevices' => (clone $baseQuery)->count(),
-                'activeDevices' => (clone $baseQuery)->where('status', DeviceStatus::Active->value)->count(),
-                'maintenanceDevices' => (clone $baseQuery)->where('status', DeviceStatus::Maintenance->value)->count(),
-                'retiredDevices' => (clone $baseQuery)->where('status', DeviceStatus::Retired->value)->count(),
-                'poorConditionDevices' => (clone $baseQuery)->whereIn('condition', DeviceCondition::poorValues())->count(),
-                'unassignedDevices' => (clone $baseQuery)->whereNull('user_id')->where('status', DeviceStatus::Active->value)->count(),
-                'noIpAddress' => (clone $baseQuery)->whereNull('ip_address')->where('status', '!=', DeviceStatus::Retired->value)->count(),
+                'totalDevices' => (int) ($row->total_devices ?? 0),
+                'activeDevices' => (int) ($row->active_devices ?? 0),
+                'maintenanceDevices' => (int) ($row->maintenance_devices ?? 0),
+                'retiredDevices' => (int) ($row->retired_devices ?? 0),
+                'poorConditionDevices' => (int) ($row->poor_condition_devices ?? 0),
+                'unassignedDevices' => (int) ($row->unassigned_devices ?? 0),
+                'noIpAddress' => (int) ($row->no_ip_address ?? 0),
             ];
         });
 

@@ -39,6 +39,7 @@
         $topReporters = $this->getTopReporters();
         $topHandlers = $this->getTopHandlers();
         $agentWorkload = $this->getAgentWorkload();
+        $ratingStats = $this->getRatingStatistics();
         $tickets = $this->getTickets();
     @endphp
 
@@ -66,7 +67,7 @@
     </div>
 
     {{-- Additional Stats --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <x-filament::section class="text-center">
             <div class="text-2xl font-bold text-info-600">{{ $stats['avg_resolution_time'] }} hari</div>
             <div class="text-sm text-gray-500">Rata-rata Waktu Penyelesaian</div>
@@ -91,7 +92,90 @@
             <div class="text-2xl font-bold text-success-600">{{ $stats['resolution_rate'] }}%</div>
             <div class="text-sm text-gray-500">Tingkat Penyelesaian</div>
         </x-filament::section>
+
+        <x-filament::section class="text-center">
+            @if($ratingStats['avg_score'])
+                <div class="text-2xl font-bold text-amber-500">{{ $ratingStats['avg_score'] }} ⭐</div>
+            @else
+                <div class="text-2xl font-bold text-gray-400">-</div>
+            @endif
+            <div class="text-sm text-gray-500">Kepuasan User ({{ $ratingStats['total_rated'] }} rating)</div>
+        </x-filament::section>
     </div>
+
+    {{-- Rating Section --}}
+    @if($ratingStats['total_rated'] > 0)
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {{-- Rating Distribution --}}
+        <x-filament::section>
+            <x-slot name="heading">Distribusi Rating</x-slot>
+            <div class="space-y-4 py-2">
+                @foreach($ratingStats['distribution'] as $score => $count)
+                    @php
+                        $percentage = $ratingStats['total_rated'] > 0 ? ($count / $ratingStats['total_rated']) * 100 : 0;
+                        $barColor = match($score) {
+                            5 => 'bg-emerald-500',
+                            4 => 'bg-lime-500',
+                            3 => 'bg-amber-400',
+                            2 => 'bg-orange-500',
+                            1 => 'bg-red-500',
+                            default => 'bg-gray-400',
+                        };
+                    @endphp
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1 w-20 shrink-0">
+                            @for($i = 1; $i <= 5; $i++)
+                                <svg class="w-3.5 h-3.5 {{ $i <= $score ? 'text-amber-400' : 'text-gray-200 dark:text-gray-700' }}" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                </svg>
+                            @endfor
+                        </div>
+                        <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                            <div class="{{ $barColor }} h-3 rounded-full transition-all" style="width: {{ max($percentage, 0) }}%"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300 w-16 text-right tabular-nums">
+                            {{ $count }} <span class="text-gray-400 font-normal">({{ round($percentage) }}%)</span>
+                        </span>
+                    </div>
+                @endforeach
+            </div>
+            <div class="pt-3 mt-3 border-t dark:border-gray-700 flex items-center justify-between">
+                <span class="text-sm text-gray-500">Total rating</span>
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $ratingStats['total_rated'] }}</span>
+            </div>
+        </x-filament::section>
+
+        {{-- Top Rated Handlers --}}
+        <x-filament::section>
+            <x-slot name="heading">Rating Per Handler</x-slot>
+            <div class="space-y-3 py-2">
+                @forelse($ratingStats['handler_ratings'] as $index => $handler)
+                    <div class="flex items-center justify-between py-2 {{ !$loop->last ? 'border-b dark:border-gray-700' : '' }}">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                                {{ $index + 1 }}
+                            </span>
+                            <span class="text-gray-800 dark:text-gray-200 font-medium">{{ $handler['name'] }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-0.5">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <svg class="w-3.5 h-3.5 {{ $i <= round($handler['avg_score']) ? 'text-amber-400' : 'text-gray-200 dark:text-gray-700' }}" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                    </svg>
+                                @endfor
+                            </div>
+                            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $handler['avg_score'] }}</span>
+                            <span class="text-xs text-gray-400">({{ $handler['total'] }})</span>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-gray-500 text-sm">Belum ada data rating</p>
+                @endforelse
+            </div>
+        </x-filament::section>
+    </div>
+    @endif
 
     {{-- Category & Priority Stats --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -227,6 +311,7 @@
                         <th class="px-4 py-3">Subjek</th>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">Ditugaskan</th>
+                        <th class="px-4 py-3">Rating</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -265,10 +350,17 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3">{{ $ticket->assignedTo->name ?? '-' }}</td>
+                            <td class="px-4 py-3">
+                                @if($ticket->rating)
+                                    <span class="text-amber-500">{{ str_repeat('⭐', $ticket->rating->score) }}</span>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="9" class="px-4 py-8 text-center text-gray-500">
                                 Tidak ada tiket pada periode ini
                             </td>
                         </tr>

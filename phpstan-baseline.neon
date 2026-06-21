@@ -1,18 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Call to an undefined method Filament\\Actions\\Imports\\ImportColumn\:\:validationMessages\(\)\.$#'
-			identifier: method.notFound
-			count: 8
-			path: app/Filament/Imports/DeviceImporter.php
-
-		-
-			message: '#^Call to an undefined method Filament\\Actions\\Imports\\ImportColumn\:\:validationMessages\(\)\.$#'
-			identifier: method.notFound
-			count: 5
-			path: app/Filament/Imports/UserImporter.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:attachments\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -75,7 +63,7 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:each\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: mixed, Closure\(App\\Models\\Ticket\)\: void given\.$#'
 			identifier: argument.type
-			count: 3
+			count: 2
 			path: app/Filament/Modules/Helpdesk/Resources/TicketResource/Tables/Concerns/TicketActions.php
 
 		-
@@ -151,12 +139,6 @@ parameters:
 			path: app/Filament/Modules/KendaraanDinas/Pages/VehicleCalendar.php
 
 		-
-			message: '#^Anonymous function should return Illuminate\\Support\\Collection\<int, int\|string\|null\> but returns Illuminate\\Support\\Collection\<int, int\|string\|null\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Filament/Modules/KendaraanDinas/Resources/VehicleBookingResource.php
-
-		-
 			message: '#^Cannot access property \$id on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
 			identifier: property.nonObject
 			count: 1
@@ -223,34 +205,10 @@ parameters:
 			path: app/Filament/Widgets/VehicleAvailabilityCalendar.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\VehicleBooking\>\:\:map\(\) contains unresolvable type\.$#'
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Models\\VehicleBooking\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
 			count: 1
 			path: app/Filament/Widgets/VehicleAvailabilityCalendar.php
-
-		-
-			message: '#^Parameter \$book of method App\\Http\\Controllers\\BookController\:\:destroy\(\) has invalid type App\\Models\\Book\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Controllers/BookController.php
-
-		-
-			message: '#^Parameter \$book of method App\\Http\\Controllers\\BookController\:\:edit\(\) has invalid type App\\Models\\Book\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Controllers/BookController.php
-
-		-
-			message: '#^Parameter \$book of method App\\Http\\Controllers\\BookController\:\:show\(\) has invalid type App\\Models\\Book\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Controllers/BookController.php
-
-		-
-			message: '#^Parameter \$book of method App\\Http\\Controllers\\BookController\:\:update\(\) has invalid type App\\Models\\Book\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Controllers/BookController.php
 
 		-
 			message: '#^Comparison operation "\>\=" between int\<7, max\> and 7 is always true\.$#'

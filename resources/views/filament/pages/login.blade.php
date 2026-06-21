@@ -1,11 +1,10 @@
 <x-filament-panels::page.simple>
-    @if (filament()->hasRegistration())
-        <x-slot name="subheading">
-            {{ __('filament-panels::pages/auth/login.actions.register.before') }}
-
-            {{ $this->registerAction }}
-        </x-slot>
-    @endif
+    {{-- Branding / Identitas Aplikasi --}}
+    <x-slot name="subheading">
+        <span class="text-sm text-gray-500 dark:text-gray-400">
+            Sistem Informasi Layanan IT Internal
+        </span>
+    </x-slot>
 
     {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, scopes: $this->getRenderHookScopes()) }}
 

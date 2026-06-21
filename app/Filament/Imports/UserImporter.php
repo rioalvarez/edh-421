@@ -17,39 +17,35 @@ class UserImporter extends Importer
             ImportColumn::make('name')
                 ->label('Nama')
                 ->requiredMapping()
-                ->rules(['required', 'max:255'])
-                ->validationMessages([
-                    'required' => 'Kolom Nama wajib diisi.',
-                    'max' => 'Nama tidak boleh lebih dari 255 karakter.',
-                ]),
+                ->exampleHeader('Nama')
+                ->example('Budi Santoso')
+                ->helperText('Wajib. Nama lengkap pegawai, maks 255 karakter.')
+                ->rules(['required', 'max:255']),
             ImportColumn::make('nip')
                 ->label('NIP')
                 ->requiredMapping()
-                ->rules(['required', 'digits:9', 'unique:users,nip'])
-                ->validationMessages([
-                    'required' => 'Kolom NIP wajib diisi.',
-                    'digits' => 'NIP harus tepat 9 digit angka.',
-                    'unique' => 'NIP :input sudah terdaftar di sistem.',
-                ]),
+                ->exampleHeader('NIP')
+                ->example('198501234')
+                ->helperText('Wajib. Tepat 9 digit angka, harus unik.')
+                ->rules(['required', 'digits:9', 'unique:users,nip']),
             ImportColumn::make('phone_number')
                 ->label('No. HP')
-                ->rules(['nullable', 'max:20'])
-                ->validationMessages([
-                    'max' => 'No. HP tidak boleh lebih dari 20 karakter.',
-                ]),
+                ->exampleHeader('No. HP')
+                ->example('081234567890')
+                ->helperText('Opsional. Format 08xx atau 62xx, maks 20 karakter.')
+                ->rules(['nullable', 'max:20']),
             ImportColumn::make('email')
                 ->label('Email')
-                ->rules(['nullable', 'email', 'max:255', 'unique:users,email'])
-                ->validationMessages([
-                    'email' => 'Format email :input tidak valid.',
-                    'max' => 'Email tidak boleh lebih dari 255 karakter.',
-                    'unique' => 'Email :input sudah digunakan oleh user lain.',
-                ]),
+                ->exampleHeader('Email')
+                ->example('budi.santoso@pajak.go.id')
+                ->helperText('Opsional. Harus unik. Digunakan untuk login SSO.')
+                ->rules(['nullable', 'email', 'max:255', 'unique:users,email']),
             ImportColumn::make('password')
-                ->rules(['nullable', 'max:255'])
-                ->validationMessages([
-                    'max' => 'Password tidak boleh lebih dari 255 karakter.',
-                ]),
+                ->label('Password')
+                ->exampleHeader('Password')
+                ->example('Password123')
+                ->helperText('Opsional. Jika kosong, user hanya bisa login via Google SSO.')
+                ->rules(['nullable', 'max:255']),
         ];
     }
 

@@ -312,12 +312,22 @@ describe('VehicleBooking Model', function () {
             expect($booking->canBeCancelled())->toBeFalse();
         });
 
-        it('canBeReturned returns true when active and not yet returned', function () {
+        it('canBeReturned returns true when active and not yet returned and start_date is today or past', function () {
             $booking = new VehicleBooking([
                 'status' => 'in_use',
+                'start_date' => Carbon::today(),
                 'returned_at' => null,
             ]);
             expect($booking->canBeReturned())->toBeTrue();
+        });
+
+        it('canBeReturned returns false when start_date is in the future', function () {
+            $booking = new VehicleBooking([
+                'status' => 'in_use',
+                'start_date' => Carbon::tomorrow(),
+                'returned_at' => null,
+            ]);
+            expect($booking->canBeReturned())->toBeFalse();
         });
 
         it('canBeReturned returns false when already returned', function () {

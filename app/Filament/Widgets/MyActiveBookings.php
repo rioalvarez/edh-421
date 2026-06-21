@@ -27,6 +27,7 @@ class MyActiveBookings extends BaseWidget
         return $table
             ->query(
                 VehicleBooking::query()
+                    ->with(['vehicle'])
                     ->where('user_id', auth()->id())
                     ->whereIn('status', VehicleBookingStatus::activeValues())
                     ->orderBy('start_date')
@@ -87,6 +88,10 @@ class MyActiveBookings extends BaseWidget
 
     public static function canView(): bool
     {
+        if (auth()->user()?->hasRole('Member')) {
+            return false;
+        }
+
         return static::passesModuleWidgetGate()
             && VehicleBooking::where('user_id', auth()->id())
                 ->whereIn('status', VehicleBookingStatus::activeValues())

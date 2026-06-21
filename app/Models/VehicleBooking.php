@@ -151,7 +151,20 @@ class VehicleBooking extends Model
 
     public function canBeReturned(): bool
     {
-        return in_array($this->status, VehicleBookingStatus::activeValues(), true) && ! $this->returned_at;
+        if (! in_array($this->status, VehicleBookingStatus::activeValues(), true)) {
+            return false;
+        }
+
+        if ($this->returned_at) {
+            return false;
+        }
+
+        // Pengembalian hanya bisa dilakukan minimal di hari yang sama dengan tanggal peminjaman
+        if (! $this->getAttributes()['start_date']) {
+            return false;
+        }
+
+        return $this->start_date->lte(today());
     }
 
     public function needsReturn(): bool

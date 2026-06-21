@@ -49,6 +49,14 @@ class TicketStatsWidget extends Widget
         return true;
     }
 
+    /**
+     * Generate SQL placeholders for an array of values.
+     */
+    private function placeholders(array $values): string
+    {
+        return implode(',', array_fill(0, count($values), '?'));
+    }
+
     public function getStats(): array
     {
         $user = auth()->user();
@@ -56,30 +64,60 @@ class TicketStatsWidget extends Widget
         $cacheKey = 'ticket_stats_widget_'.($isAdmin ? 'admin' : 'user_'.$user->id);
 
         $stats = Cache::remember($cacheKey, now()->addMinute(), function () use ($user, $isAdmin) {
-            $baseQuery = Ticket::query();
+            $openValues = TicketStatus::openValues();
+            $completedValues = TicketStatus::completedValues();
+            $highPriorityValues = TicketPriority::highValues();
+            $currentMonth = now()->month;
+            $currentYear = now()->year;
+            $today = today()->toDateString();
 
-            // Filter berdasarkan user jika bukan admin
+            // Single aggregated query instead of 8 separate COUNT queries
+            $baseQuery = Ticket::query();
             if (! $isAdmin) {
                 $baseQuery->where('user_id', $user->id);
             }
 
+            $row = (clone $baseQuery)->selectRaw("
+                SUM(status = ?) as new_tickets,
+                SUM(status = ?) as in_progress_tickets,
+                SUM(status = ?) as waiting_user_tickets,
+                SUM(status IN ({$this->placeholders($openValues)}) AND assigned_to IS NULL) as unassigned_tickets,
+                SUM(status IN ({$this->placeholders($openValues)}) AND priority IN ({$this->placeholders($highPriorityValues)})) as high_priority_open,
+                SUM(status IN ({$this->placeholders($completedValues)}) AND MONTH(resolved_at) = ? AND YEAR(resolved_at) = ?) as resolved_this_month,
+                SUM(DATE(created_at) = ?) as today_tickets,
+                SUM(MONTH(created_at) = ? AND YEAR(created_at) = ?) as monthly_tickets
+            ", [
+                TicketStatus::Open->value,
+                TicketStatus::InProgress->value,
+                TicketStatus::WaitingForUser->value,
+                ...$openValues,
+                ...$openValues,
+                ...$highPriorityValues,
+                ...$completedValues,
+                $currentMonth,
+                $currentYear,
+                $today,
+                $currentMonth,
+                $currentYear,
+            ])->first();
+
             $avgFirstResponseMinutes = $isAdmin
-                ? Ticket::whereMonth('created_at', now()->month)
-                    ->whereYear('created_at', now()->year)
+                ? Ticket::whereMonth('created_at', $currentMonth)
+                    ->whereYear('created_at', $currentYear)
                     ->whereNotNull('first_responded_at')
                     ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, first_responded_at)) as avg_minutes')
                     ->value('avg_minutes')
                 : null;
 
             return [
-                'newTickets' => (clone $baseQuery)->where('status', TicketStatus::Open->value)->count(),
-                'inProgressTickets' => (clone $baseQuery)->where('status', TicketStatus::InProgress->value)->count(),
-                'waitingUserTickets' => (clone $baseQuery)->where('status', TicketStatus::WaitingForUser->value)->count(),
-                'unassignedTickets' => (clone $baseQuery)->whereIn('status', [TicketStatus::Open->value, TicketStatus::InProgress->value])->whereNull('assigned_to')->count(),
-                'highPriorityOpen' => (clone $baseQuery)->whereIn('status', TicketStatus::openValues())->whereIn('priority', TicketPriority::highValues())->count(),
-                'resolvedThisMonth' => (clone $baseQuery)->whereIn('status', TicketStatus::completedValues())->whereMonth('resolved_at', now()->month)->whereYear('resolved_at', now()->year)->count(),
-                'todayTickets' => (clone $baseQuery)->whereDate('created_at', today())->count(),
-                'monthlyTickets' => (clone $baseQuery)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
+                'newTickets' => (int) ($row->new_tickets ?? 0),
+                'inProgressTickets' => (int) ($row->in_progress_tickets ?? 0),
+                'waitingUserTickets' => (int) ($row->waiting_user_tickets ?? 0),
+                'unassignedTickets' => (int) ($row->unassigned_tickets ?? 0),
+                'highPriorityOpen' => (int) ($row->high_priority_open ?? 0),
+                'resolvedThisMonth' => (int) ($row->resolved_this_month ?? 0),
+                'todayTickets' => (int) ($row->today_tickets ?? 0),
+                'monthlyTickets' => (int) ($row->monthly_tickets ?? 0),
                 'avgFirstResponseMinutes' => $avgFirstResponseMinutes ? round($avgFirstResponseMinutes) : null,
             ];
         });

@@ -67,20 +67,31 @@ class VehicleBookingResource extends Resource implements HasShieldPermissions
             $booking?->user_id,
         ]);
 
-        User::itAdmins()
-            ->pluck('id')
-            ->each(fn ($id) => $userIds->push($id));
+        // Use cached admin IDs to avoid querying users table every time
+        $adminIds = Cache::remember('it_admin_ids', now()->addMinutes(10), function () {
+            return User::itAdmins()->pluck('id')->all();
+        });
+
+        foreach ($adminIds as $id) {
+            $userIds->push($id);
+        }
+
+        $keysToForget = [];
 
         $userIds
             ->filter()
             ->unique()
-            ->each(function ($userId): void {
+            ->each(function ($userId) use (&$keysToForget): void {
                 foreach (['admin', 'user'] as $scope) {
-                    Cache::forget("booking_badge_{$userId}_{$scope}");
-                    Cache::forget("booking_badge_color_{$userId}_{$scope}");
-                    Cache::forget("vehicle_booking_stats_{$userId}_{$scope}");
+                    $keysToForget[] = "booking_badge_{$userId}_{$scope}";
+                    $keysToForget[] = "booking_badge_color_{$userId}_{$scope}";
+                    $keysToForget[] = "vehicle_booking_stats_{$userId}_{$scope}";
                 }
             });
+
+        foreach ($keysToForget as $key) {
+            Cache::forget($key);
+        }
     }
 
     public static function getNavigationBadge(): ?string

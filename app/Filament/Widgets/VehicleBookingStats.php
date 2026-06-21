@@ -24,9 +24,20 @@ class VehicleBookingStats extends BaseWidget
     // Implement canView method
     public static function canView(): bool
     {
-        // Dashboard admin & super_admin hanya menampilkan tiket terbaru.
+        if (auth()->user()?->hasRole('Member')) {
+            return false;
+        }
+
         return static::passesModuleWidgetGate()
             && auth()->user()?->isItAdmin() !== true;
+    }
+
+    /**
+     * Generate SQL placeholders for an array of values.
+     */
+    private function placeholders(array $values): string
+    {
+        return implode(',', array_fill(0, count($values), '?'));
     }
 
     protected function getStats(): array
@@ -36,28 +47,48 @@ class VehicleBookingStats extends BaseWidget
         $cacheKey = "vehicle_booking_stats_{$userId}_".($isAdmin ? 'admin' : 'user');
 
         $stats = Cache::remember($cacheKey, now()->addMinute(), function () use ($isAdmin, $userId) {
-            $bookingQuery = VehicleBooking::query();
+            $activeValues = VehicleBookingStatus::activeValues();
+            $currentMonth = now()->month;
+            $currentYear = now()->year;
 
+            // Single aggregated query for booking stats
+            $bookingQuery = VehicleBooking::query();
             if (! $isAdmin) {
                 $bookingQuery->where('user_id', $userId);
             }
 
-            $activeBookings = (clone $bookingQuery)->whereIn('status', VehicleBookingStatus::activeValues())->count();
-            $needsReturn = (clone $bookingQuery)->needsReturn()->count();
-            $monthlyBookings = (clone $bookingQuery)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
+            $row = (clone $bookingQuery)->selectRaw("
+                SUM(status IN ({$this->placeholders($activeValues)})) as active_bookings,
+                SUM(status IN ({$this->placeholders($activeValues)}) AND end_date < CURDATE() AND returned_at IS NULL) as needs_return,
+                SUM(MONTH(created_at) = ? AND YEAR(created_at) = ?) as monthly_bookings
+            ", [
+                ...$activeValues,
+                ...$activeValues,
+                $currentMonth,
+                $currentYear,
+            ])->first();
 
             $availableVehicles = 0;
             $totalVehicles = 0;
 
             if ($isAdmin) {
-                $availableVehicles = Vehicle::where('status', VehicleStatus::Available->value)->count();
-                $totalVehicles = Vehicle::whereIn('status', [VehicleStatus::Available->value, VehicleStatus::InUse->value])->count();
+                $vehicleRow = Vehicle::selectRaw('
+                    SUM(status = ?) as available_vehicles,
+                    SUM(status IN (?, ?)) as total_vehicles
+                ', [
+                    VehicleStatus::Available->value,
+                    VehicleStatus::Available->value,
+                    VehicleStatus::InUse->value,
+                ])->first();
+
+                $availableVehicles = (int) ($vehicleRow->available_vehicles ?? 0);
+                $totalVehicles = (int) ($vehicleRow->total_vehicles ?? 0);
             }
 
             return [
-                'activeBookings' => $activeBookings,
-                'needsReturn' => $needsReturn,
-                'monthlyBookings' => $monthlyBookings,
+                'activeBookings' => (int) ($row->active_bookings ?? 0),
+                'needsReturn' => (int) ($row->needs_return ?? 0),
+                'monthlyBookings' => (int) ($row->monthly_bookings ?? 0),
                 'availableVehicles' => $availableVehicles,
                 'totalVehicles' => $totalVehicles,
             ];

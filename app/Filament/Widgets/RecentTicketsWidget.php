@@ -64,60 +64,60 @@ class RecentTicketsWidget extends BaseWidget
             )
             ->columns([
                 Tables\Columns\TextColumn::make('ticket_number')
-            ->label('No. Tiket')
-            ->weight('bold')
-            ->searchable()
-            ->copyable(),
+                    ->label('No. Tiket')
+                    ->weight('bold')
+                    ->searchable()
+                    ->copyable(),
 
                 Tables\Columns\TextColumn::make('subject')
-            ->label('Subjek')
-            ->limit(30)
-            ->tooltip(fn ($record) => $record->subject),
+                    ->label('Subjek')
+                    ->limit(30)
+                    ->tooltip(fn ($record) => $record->subject),
 
                 Tables\Columns\TextColumn::make('user.name')
-            ->label('Pelapor')
-            ->limit(15),
+                    ->label('Pelapor')
+                    ->limit(15),
 
                 Tables\Columns\TextColumn::make('category')
-            ->label('Layanan')
-            ->badge()
-            ->formatStateUsing(fn ($record) => $record->category_label)
-            ->color(fn (string $state): string => TicketCategory::tryColor($state)),
+                    ->label('Layanan')
+                    ->badge()
+                    ->formatStateUsing(fn ($record) => $record->category_label)
+                    ->color(fn (string $state): string => TicketCategory::tryColor($state)),
 
                 Tables\Columns\TextColumn::make('priority')
-            ->label('Prioritas')
-            ->badge()
-            ->formatStateUsing(fn ($record) => $record->priority_label)
-            ->color(fn (string $state): string => TicketPriority::tryColor($state)),
+                    ->label('Prioritas')
+                    ->badge()
+                    ->formatStateUsing(fn ($record) => $record->priority_label)
+                    ->color(fn (string $state): string => TicketPriority::tryColor($state)),
 
                 Tables\Columns\TextColumn::make('status')
-            ->label('Status')
-            ->badge()
-            ->formatStateUsing(fn ($record) => $record->status_label)
-            ->color(fn (string $state): string => TicketStatus::tryColor($state)),
+                    ->label('Status')
+                    ->badge()
+                    ->formatStateUsing(fn ($record) => $record->status_label)
+                    ->color(fn (string $state): string => TicketStatus::tryColor($state)),
 
                 Tables\Columns\TextColumn::make('assignedTo.name')
-            ->label('Ditugaskan')
-            ->default('-')
-            ->limit(15),
+                    ->label('Ditugaskan')
+                    ->default('-')
+                    ->limit(15),
 
                 Tables\Columns\TextColumn::make('created_at')
-            ->label('Dibuat')
-            ->since()
-            ->sortable(),
+                    ->label('Dibuat')
+                    ->since()
+                    ->sortable(),
             ])
             ->actions([
                 Tables\Actions\Action::make('view')
-            ->label('Lihat')
-            ->icon('heroicon-o-eye')
-            ->url(fn ($record) => TicketResource::getUrl('view', ['record' => $record])),
+                    ->label('Lihat')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn ($record) => TicketResource::getUrl('view', ['record' => $record])),
 
                 Tables\Actions\Action::make('assign')
-            ->label('Tugaskan')
-            ->icon('heroicon-o-user-plus')
-            ->color('warning')
-            ->url(fn ($record) => TicketResource::getUrl('edit', ['record' => $record]))
-            ->visible(fn ($record) => is_null($record->assigned_to)),
+                    ->label('Tugaskan')
+                    ->icon('heroicon-o-user-plus')
+                    ->color('warning')
+                    ->url(fn ($record) => TicketResource::getUrl('edit', ['record' => $record]))
+                    ->visible(fn ($record) => is_null($record->assigned_to)),
             ])
             ->emptyStateHeading('Tidak ada tiket yang perlu ditindaklanjuti')
             ->emptyStateDescription('Semua tiket sudah diproses.')

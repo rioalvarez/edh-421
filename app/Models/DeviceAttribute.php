@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class DeviceAttribute extends Model
@@ -28,6 +29,18 @@ class DeviceAttribute extends Model
             if ($attribute->isDirty('name') && ! $attribute->isDirty('slug')) {
                 $attribute->slug = Str::slug($attribute->name);
             }
+        });
+
+        // Invalidate cached slug lookup when attribute changes
+        static::saved(function (DeviceAttribute $attribute) {
+            Cache::forget("device_attribute_{$attribute->slug}");
+            if ($attribute->isDirty('slug')) {
+                Cache::forget("device_attribute_{$attribute->getOriginal('slug')}");
+            }
+        });
+
+        static::deleted(function (DeviceAttribute $attribute) {
+            Cache::forget("device_attribute_{$attribute->slug}");
         });
     }
 

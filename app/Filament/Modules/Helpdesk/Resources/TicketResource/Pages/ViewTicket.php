@@ -70,6 +70,13 @@ class ViewTicket extends ViewRecord
         ];
     }
 
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            TicketResource\Widgets\TicketRatingWidget::class,
+        ];
+    }
+
     protected function getFooterWidgets(): array
     {
         return [

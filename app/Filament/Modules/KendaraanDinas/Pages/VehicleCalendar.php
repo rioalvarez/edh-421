@@ -62,16 +62,27 @@ class VehicleCalendar extends Page
         }])->get();
 
         return $vehicles->map(function ($vehicle) use ($startOfMonth, $endOfMonth) {
+            // Build a date-indexed lookup for O(1) access instead of O(n) per day
+            $bookingsByDate = [];
+            foreach ($vehicle->bookings as $booking) {
+                $bookingStart = $booking->start_date->copy()->max($startOfMonth);
+                $bookingEnd = $booking->end_date->copy()->min($endOfMonth);
+                $current = $bookingStart->copy();
+
+                while ($current <= $bookingEnd) {
+                    $bookingsByDate[$current->format('Y-m-d')] = $booking;
+                    $current->addDay();
+                }
+            }
+
             $days = [];
             $current = $startOfMonth->copy();
 
             while ($current <= $endOfMonth) {
-                $date = $current->copy();
-                $booking = $vehicle->bookings->first(function ($b) use ($date) {
-                    return $date->between($b->start_date, $b->end_date);
-                });
+                $dateKey = $current->format('Y-m-d');
+                $booking = $bookingsByDate[$dateKey] ?? null;
 
-                $days[$date->format('Y-m-d')] = [
+                $days[$dateKey] = [
                     'isBooked' => $booking !== null,
                     'booking' => $booking ? [
                         'id' => $booking->id,

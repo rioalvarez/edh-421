@@ -40,7 +40,7 @@ class TicketResource extends Resource implements HasShieldPermissions
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
-            ->with(['user', 'assignedTo', 'device', 'attachments']); // Eager loading untuk performa
+            ->with(['user', 'assignedTo', 'device', 'attachments', 'rating']); // Eager loading untuk performa
 
         if (! auth()->user()->isItAdmin()) {
             $query->where('user_id', auth()->id());

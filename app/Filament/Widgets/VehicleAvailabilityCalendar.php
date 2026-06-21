@@ -26,7 +26,10 @@ class VehicleAvailabilityCalendar extends Widget
     // Implement canView method
     public static function canView(): bool
     {
-        // Dashboard admin & super_admin hanya menampilkan tiket terbaru.
+        if (auth()->user()?->hasRole('Member')) {
+            return false;
+        }
+
         return static::passesModuleWidgetGate()
             && auth()->user()?->isItAdmin() !== true;
     }
@@ -76,27 +79,39 @@ class VehicleAvailabilityCalendar extends Widget
         $current = $startOfMonth->copy()->startOfWeek(Carbon::MONDAY);
         $endOfCalendar = $endOfMonth->copy()->endOfWeek(Carbon::SUNDAY);
 
+        // Pre-index bookings by date for O(1) lookup instead of O(n) filter per day
+        $bookingsByDate = [];
+        if ($bookings instanceof \Illuminate\Support\Collection) {
+            foreach ($bookings as $booking) {
+                $bStart = $booking->start_date->copy()->max($startOfMonth->copy()->startOfWeek(Carbon::MONDAY));
+                $bEnd = $booking->end_date->copy()->min($endOfMonth->copy()->endOfWeek(Carbon::SUNDAY));
+                $d = $bStart->copy();
+                while ($d <= $bEnd) {
+                    $bookingsByDate[$d->format('Y-m-d')][] = $booking;
+                    $d->addDay();
+                }
+            }
+        }
+
         while ($current <= $endOfCalendar) {
             $week = [];
             for ($i = 0; $i < 7; $i++) {
                 $date = $current->copy();
+                $dateKey = $date->format('Y-m-d');
                 $isCurrentMonth = $date->month === $startOfMonth->month;
                 $isToday = $date->isToday();
                 $isPast = $date->isPast() && ! $isToday;
 
-                // Check if date has booking
-                $dayBookings = $bookings->filter(function ($booking) use ($date) {
-                    return $date->between($booking->start_date, $booking->end_date);
-                });
+                $dayBookings = $bookingsByDate[$dateKey] ?? [];
 
                 $week[] = [
-                    'date' => $date->format('Y-m-d'),
+                    'date' => $dateKey,
                     'day' => $date->day,
                     'isCurrentMonth' => $isCurrentMonth,
                     'isToday' => $isToday,
                     'isPast' => $isPast,
-                    'isBooked' => $dayBookings->isNotEmpty(),
-                    'bookings' => $dayBookings->map(fn ($b) => [
+                    'isBooked' => count($dayBookings) > 0,
+                    'bookings' => collect($dayBookings)->map(fn (VehicleBooking $b) => [
                         'id' => $b->id,
                         'user' => $b->user->name,
                         'destination' => $b->destination,

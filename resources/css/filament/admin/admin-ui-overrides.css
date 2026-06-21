@@ -105,6 +105,74 @@ body.admin-density-dense .fi-sidebar-nav {
     padding-bottom: 1.25rem;
 }
 
+/* ─── Sidebar Scrollbar: thin & elegant ─── */
+.fi-sidebar-nav {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--gray-300), 0.5) transparent;
+}
+
+.dark .fi-sidebar-nav {
+    scrollbar-color: rgba(var(--gray-600), 0.4) transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+.fi-sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.fi-sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: 0.5rem;
+}
+
+.fi-sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: rgba(var(--gray-300), 0.6);
+    border-radius: 9999px;
+    transition: background-color 0.2s;
+}
+
+.fi-sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(var(--gray-400), 0.8);
+}
+
+.dark .fi-sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: rgba(var(--gray-600), 0.5);
+}
+
+.dark .fi-sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(var(--gray-500), 0.7);
+}
+
+/* Hide scrollbar until hover (sidebar container) */
+.fi-sidebar-nav {
+    scrollbar-gutter: stable;
+}
+
+.fi-sidebar:not(:hover) .fi-sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: transparent;
+}
+
+.fi-sidebar:hover .fi-sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: rgba(var(--gray-300), 0.6);
+}
+
+.dark .fi-sidebar:hover .fi-sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: rgba(var(--gray-600), 0.5);
+}
+
+/* Dark sidebar variant scrollbar */
+body.admin-sidebar-dark .fi-sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+body.admin-sidebar-dark .fi-sidebar:hover .fi-sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+body.admin-sidebar-dark .fi-sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
 body.admin-radius-soft .fi-section,
 body.admin-radius-soft .fi-ta-ctn,
 body.admin-radius-soft .fi-modal-window,

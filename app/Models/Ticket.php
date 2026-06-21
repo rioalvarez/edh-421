@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 
 #[ObservedBy([TicketObserver::class])]
@@ -88,6 +89,11 @@ class Ticket extends Model
         return $this->hasMany(TicketAuditLog::class)->orderByDesc('created_at');
     }
 
+    public function rating(): HasOne
+    {
+        return $this->hasOne(TicketRating::class);
+    }
+
     // Accessors
     public function getPriorityColorAttribute(): string
     {
@@ -158,5 +164,22 @@ class Ticket extends Model
             'resolved_at' => null,
             'closed_at' => null,
         ]);
+    }
+
+    public function hasBeenRated(): bool
+    {
+        return $this->rating()->exists();
+    }
+
+    public function canBeRated(): bool
+    {
+        return $this->status === TicketStatus::Resolved->value
+            && ! $this->hasBeenRated();
+    }
+
+    public function canBeClosedByReporter(User $user): bool
+    {
+        return (int) $this->user_id === (int) $user->getKey()
+            && $this->status === TicketStatus::Resolved->value;
     }
 }

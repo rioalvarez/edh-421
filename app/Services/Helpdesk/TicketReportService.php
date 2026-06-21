@@ -6,6 +6,7 @@ use App\Enums\TicketCategory;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
+use App\Models\TicketRating;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -142,6 +143,57 @@ class TicketReportService
     }
 
     /**
+     * @return array{avg_score: float|null, total_rated: int, distribution: array<int, int>, handler_ratings: array<int, array{name: string, avg_score: float, total: int}>}
+     */
+    public function ratingStatistics(string $startDate, string $endDate): array
+    {
+        $dateRange = $this->dateRange($startDate, $endDate);
+
+        $ratings = TicketRating::whereHas('ticket', fn (Builder $q) => $q->whereBetween('created_at', $dateRange));
+
+        $avgScore = (clone $ratings)->avg('score');
+        $totalRated = (clone $ratings)->count();
+
+        // Distribution: how many tickets got each score
+        $distribution = (clone $ratings)
+            ->selectRaw('score, count(*) as total')
+            ->groupBy('score')
+            ->pluck('total', 'score')
+            ->all();
+
+        // Fill missing scores with 0
+        $fullDistribution = [];
+        for ($i = 5; $i >= 1; $i--) {
+            $fullDistribution[$i] = $distribution[$i] ?? 0;
+        }
+
+        // Avg rating per handler
+        $handlerRatings = DB::table('ticket_ratings')
+            ->join('tickets', 'ticket_ratings.ticket_id', '=', 'tickets.id')
+            ->join('users', 'tickets.assigned_to', '=', 'users.id')
+            ->whereBetween('tickets.created_at', $dateRange)
+            ->whereNotNull('tickets.assigned_to')
+            ->selectRaw('users.id, users.name, AVG(ticket_ratings.score) as avg_score, COUNT(*) as total')
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('avg_score')
+            ->limit(5)
+            ->get()
+            ->map(fn ($row) => [
+                'name' => $row->name,
+                'avg_score' => round((float) $row->avg_score, 1),
+                'total' => (int) $row->total,
+            ])
+            ->all();
+
+        return [
+            'avg_score' => $avgScore ? round((float) $avgScore, 1) : null,
+            'total_rated' => $totalRated,
+            'distribution' => $fullDistribution,
+            'handler_ratings' => $handlerRatings,
+        ];
+    }
+
+    /**
      * @return EloquentCollection<int, Ticket>
      */
     public function tickets(string $startDate, string $endDate): EloquentCollection
@@ -188,7 +240,7 @@ class TicketReportService
      */
     private function ticketsQuery(string $startDate, string $endDate): Builder
     {
-        return Ticket::with(['user', 'assignedTo'])
+        return Ticket::with(['user', 'assignedTo', 'rating'])
             ->whereBetween('created_at', $this->dateRange($startDate, $endDate))
             ->orderBy('created_at', 'desc');
     }

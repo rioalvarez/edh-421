@@ -7,7 +7,6 @@ use App\Filament\Modules\KendaraanDinas\Resources\VehicleBookingResource\Support
 use App\Models\VehicleBooking;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Infolists\Components\Section;
 
 class VehicleBookingForm
 {
@@ -62,6 +61,7 @@ class VehicleBookingForm
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Tanggal Mulai')
                             ->required()
+                            ->native()
                             ->minDate(today())
                             ->live()
                             ->afterStateUpdated(fn (Forms\Set $set) => $set('_check_trigger', now()->timestamp)),
@@ -69,6 +69,7 @@ class VehicleBookingForm
                         Forms\Components\DatePicker::make('end_date')
                             ->label('Tanggal Selesai')
                             ->required()
+                            ->native()
                             ->minDate(fn (Forms\Get $get) => $get('start_date') ?? today())
                             ->live()
                             ->afterStateUpdated(fn (Forms\Set $set) => $set('_check_trigger', now()->timestamp))
@@ -77,19 +78,41 @@ class VehicleBookingForm
                                     $vehicleId = $get('vehicle_id');
                                     $startDate = $get('start_date');
                                     $recordId = $get('id');
+                                    $userId = $get('user_id');
 
                                     if ($vehicleId && $startDate && $value) {
                                         if (! VehicleBooking::isVehicleAvailable($vehicleId, $startDate, $value, $recordId)) {
                                             $fail('Kendaraan tidak tersedia pada tanggal tersebut. Silakan pilih tanggal lain.');
                                         }
                                     }
+
+                                    // Block user dari meminjam lebih dari 1 KDO di hari yang sama
+                                    if ($userId && $startDate && $value) {
+                                        $hasOverlap = VehicleBooking::where('user_id', $userId)
+                                            ->whereIn('status', \App\Enums\VehicleBookingStatus::activeValues())
+                                            ->when($recordId, fn ($q) => $q->where('id', '!=', $recordId))
+                                            ->where(function ($q) use ($startDate, $value) {
+                                                $q->whereBetween('start_date', [$startDate, $value])
+                                                    ->orWhereBetween('end_date', [$startDate, $value])
+                                                    ->orWhere(function ($q2) use ($startDate, $value) {
+                                                        $q2->where('start_date', '<=', $startDate)
+                                                            ->where('end_date', '>=', $value);
+                                                    });
+                                            })
+                                            ->exists();
+
+                                        if ($hasOverlap) {
+                                            $fail('Pemohon sudah memiliki peminjaman KDO lain pada tanggal tersebut. Tidak boleh meminjam lebih dari 1 kendaraan di hari yang sama.');
+                                        }
+                                    }
                                 },
                             ]),
 
-                        Forms\Components\TimePicker::make('departure_time')
+                        Forms\Components\Select::make('departure_time')
                             ->label('Jam Keberangkatan')
-                            ->seconds(false)
                             ->required()
+                            ->options(self::hourOptions())
+                            ->searchable()
                             ->helperText('Perkiraan waktu keberangkatan'),
 
                         Forms\Components\Hidden::make('_check_trigger'),
@@ -114,20 +137,15 @@ class VehicleBookingForm
                             ->prefix('ST-')
                             ->suffix('/WPJ.09/KPP.0908/'.date('Y'))
                             ->placeholder('001')
-                            ->integer()
-                            ->minValue(1)
                             ->maxLength(10)
                             ->regex('/^\d+$/')
                             ->extraInputAttributes([
-                                'onkeypress' => 'return (event.charCode >= 48 && event.charCode <= 57)',
-                                'onpaste' => 'return false',
                                 'inputmode' => 'numeric',
                                 'pattern' => '[0-9]*',
                             ])
                             ->helperText('Masukkan nomor urut surat tugas (contoh: 001, 002, dst)')
                             ->validationMessages([
                                 'regex' => 'Hanya boleh diisi angka',
-                                'integer' => 'Hanya boleh diisi angka positif',
                             ])
                             ->dehydrateStateUsing(fn ($state) => $state ? 'ST-'.$state.'/WPJ.09/KPP.0908/'.date('Y') : null)
                             ->afterStateHydrated(function ($component, $state) {
@@ -233,5 +251,24 @@ class VehicleBookingForm
                     ->visible(fn () => auth()->user()?->isItAdmin())
                     ->collapsed(),
             ]);
+    }
+
+    /**
+     * Generate 24-hour time options (06:00 - 22:00, interval 30 menit).
+     *
+     * @return array<string, string>
+     */
+    private static function hourOptions(): array
+    {
+        $options = [];
+
+        for ($hour = 6; $hour <= 22; $hour++) {
+            foreach (['00', '30'] as $minute) {
+                $time = sprintf('%02d:%s', $hour, $minute);
+                $options[$time] = $time;
+            }
+        }
+
+        return $options;
     }
 }

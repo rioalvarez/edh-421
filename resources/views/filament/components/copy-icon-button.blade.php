@@ -9,9 +9,24 @@
         type="button"
         x-data="{ copied: false, value: @js($value) }"
         x-on:click.stop.prevent="
-            navigator.clipboard.writeText(value);
-            copied = true;
-            setTimeout(() => copied = false, 1500);
+            const copyText = (text) => {
+                if (navigator.clipboard && window.isSecureContext) {
+                    return navigator.clipboard.writeText(text);
+                }
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                return Promise.resolve();
+            };
+            copyText(value).then(() => {
+                copied = true;
+                setTimeout(() => copied = false, 1500);
+            });
         "
         x-bind:title="copied ? @js($message) : @js($label)"
         {{ $attributes->class([
@@ -21,6 +36,11 @@
         ]) }}
         aria-label="{{ $label }}"
     >
-        <x-heroicon-o-clipboard-document class="h-4 w-4" />
+        <template x-if="!copied">
+            <x-heroicon-o-clipboard-document class="h-4 w-4" />
+        </template>
+        <template x-if="copied">
+            <x-heroicon-o-clipboard-document-check class="h-4 w-4 text-success-500" />
+        </template>
     </button>
 @endif

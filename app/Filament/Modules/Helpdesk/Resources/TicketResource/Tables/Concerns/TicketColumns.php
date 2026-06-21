@@ -94,6 +94,13 @@ class TicketColumns
                 ->dateTime('d M Y H:i')
                 ->sortable()
                 ->toggleable(isToggledHiddenByDefault: true),
+
+            Tables\Columns\TextColumn::make('rating.score')
+                ->label('Rating')
+                ->formatStateUsing(fn ($state) => $state ? str_repeat('⭐', $state) : '-')
+                ->tooltip(fn ($record) => $record->rating?->feedback)
+                ->sortable()
+                ->toggleable(),
         ];
     }
 }

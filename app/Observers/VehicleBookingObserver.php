@@ -6,8 +6,8 @@ use App\Enums\VehicleBookingStatus;
 use App\Filament\Modules\KendaraanDinas\Resources\VehicleBookingResource;
 use App\Models\User;
 use App\Models\VehicleBooking;
-use Filament\Notifications\Actions\Action;
-use Filament\Notifications\Notification;
+use App\Notifications\VehicleBookingNotification;
+use Illuminate\Support\Facades\Notification;
 
 class VehicleBookingObserver
 {
@@ -18,37 +18,29 @@ class VehicleBookingObserver
     {
         VehicleBookingResource::clearNavigationCache($booking);
 
-        // Notifikasi ke semua admin bahwa ada peminjaman baru
+        // Queued notifications to all admins except booking creator
         $admins = User::itAdmins()->where('id', '!=', $booking->user_id)->get();
 
-        foreach ($admins as $admin) {
-            Notification::make()
-                ->title('Peminjaman KDO Baru: '.$booking->booking_number)
-                ->body("{$booking->vehicle->display_name} - {$booking->destination}")
-                ->icon('heroicon-o-truck')
-                ->iconColor('info')
-                ->actions([
-                    Action::make('view')
-                        ->label('Lihat')
-                        ->url(VehicleBookingResource::getUrl('view', ['record' => $booking]))
-                        ->markAsRead(),
-                ])
-                ->sendToDatabase($admin);
-        }
+        Notification::send(
+            $admins,
+            VehicleBookingNotification::created(
+                $booking->id,
+                $booking->booking_number,
+                $booking->vehicle->display_name,
+                $booking->destination,
+            )
+        );
 
-        // Konfirmasi ke pemohon
-        Notification::make()
-            ->title('Peminjaman KDO Disetujui')
-            ->body("Peminjaman {$booking->booking_number} untuk {$booking->vehicle->display_name} telah disetujui")
-            ->icon('heroicon-o-check-circle')
-            ->iconColor('success')
-            ->actions([
-                Action::make('view')
-                    ->label('Lihat Detail')
-                    ->url(VehicleBookingResource::getUrl('view', ['record' => $booking]))
-                    ->markAsRead(),
-            ])
-            ->sendToDatabase($booking->user);
+        // Confirmation to requester
+        /** @var User $owner */
+        $owner = $booking->user;
+        $owner->notify(
+            VehicleBookingNotification::approved(
+                $booking->id,
+                $booking->booking_number,
+                $booking->vehicle->display_name,
+            )
+        );
     }
 
     /**
@@ -58,53 +50,45 @@ class VehicleBookingObserver
     {
         VehicleBookingResource::clearNavigationCache($booking);
 
-        // Cek apakah status berubah
-        if ($booking->isDirty('status')) {
-            $newStatus = $booking->status;
+        if (! $booking->isDirty('status')) {
+            return;
+        }
 
-            $newStatusLabel = VehicleBookingStatus::tryLabel($newStatus) ?? $newStatus;
+        $newStatus = $booking->status;
+        $newStatusLabel = VehicleBookingStatus::tryLabel($newStatus) ?? $newStatus;
+        $newStatusColor = VehicleBookingStatus::tryColor($newStatus);
 
-            // Notifikasi ke pemohon jika bukan dia yang mengubah
-            if ($booking->user_id !== auth()->id()) {
-                $body = "Peminjaman {$booking->booking_number} status berubah menjadi: {$newStatusLabel}";
+        // Notify requester if they didn't make the change
+        if ($booking->user_id !== auth()->id()) {
+            $cancellationReason = ($newStatus === VehicleBookingStatus::Cancelled->value)
+                ? $booking->cancellation_reason
+                : null;
 
-                if ($newStatus === VehicleBookingStatus::Cancelled->value && $booking->cancellation_reason) {
-                    $body .= "\nAlasan: {$booking->cancellation_reason}";
-                }
+            /** @var User $owner */
+            $owner = $booking->user;
+            $owner->notify(
+                VehicleBookingNotification::statusChanged(
+                    $booking->id,
+                    $booking->booking_number,
+                    $newStatusLabel,
+                    $newStatusColor,
+                    $cancellationReason,
+                )
+            );
+        }
 
-                Notification::make()
-                    ->title('Status Peminjaman KDO Diperbarui')
-                    ->body($body)
-                    ->icon('heroicon-o-arrow-path')
-                    ->iconColor(VehicleBookingStatus::tryColor($newStatus))
-                    ->actions([
-                        Action::make('view')
-                            ->label('Lihat Detail')
-                            ->url(VehicleBookingResource::getUrl('view', ['record' => $booking]))
-                            ->markAsRead(),
-                    ])
-                    ->sendToDatabase($booking->user);
-            }
+        // Notify all admins when vehicle is returned
+        if ($newStatus === VehicleBookingStatus::Completed->value) {
+            $admins = User::itAdmins()->get();
 
-            // Notifikasi khusus saat selesai dikembalikan
-            if ($newStatus === VehicleBookingStatus::Completed->value) {
-                $admins = User::itAdmins()->get();
-
-                foreach ($admins as $admin) {
-                    Notification::make()
-                        ->title('KDO Telah Dikembalikan')
-                        ->body("{$booking->vehicle->display_name} telah dikembalikan oleh {$booking->user->name}")
-                        ->icon('heroicon-o-check-badge')
-                        ->iconColor('success')
-                        ->actions([
-                            Action::make('view')
-                                ->label('Lihat Detail')
-                                ->url(VehicleBookingResource::getUrl('view', ['record' => $booking]))
-                                ->markAsRead(),
-                        ])
-                        ->sendToDatabase($admin);
-                }
-            }
+            Notification::send(
+                $admins,
+                VehicleBookingNotification::returned(
+                    $booking->id,
+                    $booking->vehicle->display_name,
+                    $booking->user->name,
+                )
+            );
         }
     }
 

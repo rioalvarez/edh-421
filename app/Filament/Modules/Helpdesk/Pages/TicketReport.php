@@ -129,6 +129,11 @@ class TicketReport extends Page implements HasForms
         return $this->reportService()->agentWorkload();
     }
 
+    public function getRatingStatistics(): array
+    {
+        return $this->reportService()->ratingStatistics($this->startDate, $this->endDate);
+    }
+
     /**
      * @return EloquentCollection<int, Ticket>
      */
